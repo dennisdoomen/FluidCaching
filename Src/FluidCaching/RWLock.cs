@@ -2,13 +2,6 @@ using System.Threading;
 
 namespace Platform.Utility
 {
-    public enum LockStatus
-    {
-        Unlocked,
-        ReadLock,
-        WriteLock
-    }
-
     public static class RWLock
     {
         public delegate ResultType DoWorkFunc<ResultType>();

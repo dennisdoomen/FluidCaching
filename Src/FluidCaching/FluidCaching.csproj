@@ -35,6 +35,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="FluidCache.cs" />
+    <Compile Include="GetKeyFunc.cs" />
+    <Compile Include="IIndex.cs" />
+    <Compile Include="INode.cs" />
+    <Compile Include="IsValid.cs" />
+    <Compile Include="LoadItemFunc.cs" />
+    <Compile Include="LockStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RWLock.cs" />
   </ItemGroup>

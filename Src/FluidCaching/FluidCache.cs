@@ -25,68 +25,22 @@ namespace FluidCaching
     /// !!!!! THERE ARE 2 DIFFERENT LOCKS USED BY CACHE - so care is required when altering code or you may introduce deadlocks !!!!!
     ///        order of lock nesting is LifespanMgr (Monitor) / Index (ReaderWriterLock)
     /// </remarks>
-    public class FluidCache<ItemType> where ItemType : class
+    public class FluidCache<T> where T : class
     {
-        #region delegates
-
-        public delegate bool IsValid();
-
-        public delegate KeyType GetKeyFunc<KeyType>(ItemType item);
-
-        public delegate ItemType LoadItemFunc<KeyType>(KeyType key);
-
-        #endregion
-
-        #region interfaces
-
-        /// <summary>The public wrapper for a Index</summary>
-        public interface IIndex<KeyType>
-        {
-            /// <summary>Getter for index</summary>
-            /// <param name="key">key to find (or load if needed)</param>
-            /// <returns>the object value associated with the cache</returns>
-            ItemType this[KeyType key] { get; }
-
-            /// <summary>Delete object that matches key from cache</summary>
-            /// <param name="key">key to find</param>
-            void Remove(KeyType key);
-        }
-
-        /// <summary>Because there is no auto inheritance between generic types, this interface is used to send messages to Index objects</summary>
-        private interface IIndex
-        {
-            void ClearIndex();
-            bool AddItem(INode item);
-            INode FindItem(ItemType item);
-            int RebuildIndex();
-        }
-
-        /// <summary>This interface exposes the public part of a LifespanMgr.Node</summary>
-        private interface INode
-        {
-            ItemType Value { get; }
-            void Touch();
-            void Remove();
-        }
-
-        #endregion
-
-        #region private nested classes
-
         /// <summary>Index provides dictionary key / value access to any object in cache</summary>
-        private class Index<KeyType> : IIndex<KeyType>, IIndex
+        private class Index<KeyType> : IIndex<T, KeyType>, IIndex<T>
         {
-            private readonly FluidCache<ItemType> _owner;
+            private readonly FluidCache<T> _owner;
             private readonly Dictionary<KeyType, WeakReference> _index;
-            private readonly GetKeyFunc<KeyType> _getKey;
-            private readonly LoadItemFunc<KeyType> _loadItem;
+            private readonly GetKeyFunc<T, KeyType> _getKey;
+            private readonly LoadItemFunc<T, KeyType> _loadItem;
             private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
             /// <summary>constructor</summary>
             /// <param name="owner">parent of index</param>
             /// <param name="getKey">delegate to get key from object</param>
             /// <param name="loadItem">delegate to load object if it is not found in index</param>
-            public Index(FluidCache<ItemType> owner, GetKeyFunc<KeyType> getKey, LoadItemFunc<KeyType> loadItem)
+            public Index(FluidCache<T> owner, GetKeyFunc<T, KeyType> getKey, LoadItemFunc<T, KeyType> loadItem)
             {
                 Debug.Assert(owner != null, "owner argument required");
                 Debug.Assert(getKey != null, "GetKey delegate required");
@@ -100,11 +54,11 @@ namespace FluidCaching
             /// <summary>Getter for index</summary>
             /// <param name="key">key to find (or load if needed)</param>
             /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-            public ItemType this[KeyType key]
+            public T this[KeyType key]
             {
                 get
                 {
-                    INode node = GetNode(key);
+                    INode<T> node = GetNode(key);
                     if (node != null)
                         node.Touch();
                     if ((node == null || node.Value == null) && _loadItem != null)
@@ -117,23 +71,23 @@ namespace FluidCaching
             /// <param name="key"></param>
             public void Remove(KeyType key)
             {
-                INode node = GetNode(key);
+                INode<T> node = GetNode(key);
                 if (node != null)
                     node.Remove();
                 _owner._lifeSpan.CheckValid();
             }
 
-            private INode GetNode(KeyType key)
+            private INode<T> GetNode(KeyType key)
             {
                 return RWLock.GetReadLock(_lock, _lockTimeout, delegate
                 {
                     WeakReference value;
-                    return (INode) (_index.TryGetValue(key, out value) ? value.Target : null);
+                    return (INode<T>) (_index.TryGetValue(key, out value) ? value.Target : null);
                 });
             }
 
             /// <summary>try to find this item in the index and return Node</summary>
-            public INode FindItem(ItemType item)
+            public INode<T> FindItem(T item)
             {
                 return GetNode(_getKey(item));
             }
@@ -151,7 +105,7 @@ namespace FluidCaching
             /// <summary>Add new item to index</summary>
             /// <param name="item">item to add</param>
             /// <returns>was item key previously contained in index</returns>
-            public bool AddItem(INode item)
+            public bool AddItem(INode<T> item)
             {
                 KeyType key = _getKey(item.Value);
                 return RWLock.GetWriteLock(_lock, _lockTimeout, delegate
@@ -169,14 +123,14 @@ namespace FluidCaching
                     return RWLock.GetWriteLock(_lock, _lockTimeout, delegate
                     {
                         _index.Clear();
-                        foreach (INode item in _owner._lifeSpan)
+                        foreach (INode<T> item in _owner._lifeSpan)
                             AddItem(item);
                         return _index.Count;
                     });
             }
         }
 
-        private class LifespanMgr : IEnumerable<INode>
+        private class LifespanMgr : IEnumerable<INode<T>>
         {
             /// <summary>container class used to hold nodes added within a descrete timeframe</summary>
             private class AgeBag
@@ -187,14 +141,14 @@ namespace FluidCaching
             }
 
             /// <summary>LRUNodes is a linked list of items</summary>
-            private class Node : INode
+            private class Node : INode<T>
             {
                 private readonly LifespanMgr _mgr;
                 public Node next;
                 public AgeBag ageBag;
 
                 /// <summary>constructor</summary>
-                public Node(LifespanMgr mgr, ItemType value)
+                public Node(LifespanMgr mgr, T value)
                 {
                     _mgr = mgr;
                     Value = value;
@@ -203,7 +157,7 @@ namespace FluidCaching
                 }
 
                 /// <summary>returns the object</summary>
-                public ItemType Value { get; private set; }
+                public T Value { get; private set; }
 
                 /// <summary>Updates the status of the node to prevent it from being dropped from cache</summary>
                 public void Touch()
@@ -235,7 +189,7 @@ namespace FluidCaching
                 }
             }
 
-            private readonly FluidCache<ItemType> _owner;
+            private readonly FluidCache<T> _owner;
             private readonly TimeSpan _minAge;
             private readonly TimeSpan _maxAge;
             private readonly TimeSpan _timeSlice;
@@ -249,7 +203,7 @@ namespace FluidCaching
             private int _oldest;
             private const int _size = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
 
-            public LifespanMgr(FluidCache<ItemType> owner, TimeSpan minAge, TimeSpan maxAge)
+            public LifespanMgr(FluidCache<T> owner, TimeSpan minAge, TimeSpan maxAge)
             {
                 _owner = owner;
                 int maxMS = Math.Min((int) maxAge.TotalMilliseconds, 12*60*60*1000); // max = 12 hours
@@ -263,7 +217,7 @@ namespace FluidCaching
                 OpenCurrentBag(DateTime.Now, 0);
             }
 
-            public INode Add(ItemType value)
+            public INode<T> Add(T value)
             {
                 return new Node(this, value);
             }
@@ -343,7 +297,7 @@ namespace FluidCaching
                 // if indexes are getting too big its time to rebuild them
                 if (_owner._totalCount - _owner._curCount > _owner._capacity)
                 {
-                    foreach (KeyValuePair<string, IIndex> keyValue in _owner._indexList)
+                    foreach (KeyValuePair<string, IIndex<T>> keyValue in _owner._indexList)
                         _owner._curCount = keyValue.Value.RebuildIndex();
                     _owner._totalCount = _owner._curCount;
                 }
@@ -393,7 +347,7 @@ namespace FluidCaching
             }
 
             /// <summary>Create item enumerator</summary>
-            public IEnumerator<INode> GetEnumerator()
+            public IEnumerator<INode<T>> GetEnumerator()
             {
                 for (int bagNumber = _current; bagNumber >= _oldest; --bagNumber)
                 {
@@ -412,20 +366,14 @@ namespace FluidCaching
             }
         };
 
-        #endregion
-
-        #region private data
-
         private const int _lockTimeout = 30000;
 
-        private readonly Dictionary<string, IIndex> _indexList = new Dictionary<string, IIndex>();
+        private readonly Dictionary<string, IIndex<T>> _indexList = new Dictionary<string, IIndex<T>>();
         protected IsValid _isValid;
         private readonly LifespanMgr _lifeSpan;
         private readonly int _capacity;
         private int _curCount;
         private int _totalCount;
-
-        #endregion
 
         /// <summary>Constructor</summary>
         /// <param name="capacity">the normal item limit for cache (Count may exeed capacity due to minAge)</param>
@@ -441,16 +389,16 @@ namespace FluidCaching
         }
 
         /// <summary>Retrieve a index by name</summary>
-        public IIndex<KeyType> GetIndex<KeyType>(String indexName)
+        public IIndex<T, KeyType> GetIndex<KeyType>(String indexName)
         {
-            IIndex index;
-            return (_indexList.TryGetValue(indexName, out index) ? index as IIndex<KeyType> : null);
+            IIndex<T> index;
+            return (_indexList.TryGetValue(indexName, out index) ? index as IIndex<T, KeyType> : null);
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
-        public ItemType GetValue<KeyType>(String indexName, KeyType key)
+        public T GetValue<KeyType>(String indexName, KeyType key)
         {
-            IIndex<KeyType> index = GetIndex<KeyType>(indexName);
+            IIndex<T, KeyType> index = GetIndex<KeyType>(indexName);
             return (index == null ? null : index[key]);
         }
 
@@ -460,8 +408,8 @@ namespace FluidCaching
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
         /// <returns>the newly created index</returns>
-        public IIndex<KeyType> AddIndex<KeyType>(String indexName, GetKeyFunc<KeyType> getKey,
-            LoadItemFunc<KeyType> loadItem)
+        public IIndex<T, KeyType> AddIndex<KeyType>(String indexName, GetKeyFunc<T, KeyType> getKey,
+            LoadItemFunc<T, KeyType> loadItem)
         {
             var index = new Index<KeyType>(this, getKey, loadItem);
             _indexList[indexName] = index;
@@ -469,19 +417,19 @@ namespace FluidCaching
         }
 
         /// <summary>Add an item to the cache (not needed if accessed by index)</summary>
-        public void AddItem(ItemType item)
+        public void AddItem(T item)
         {
             Add(item);
         }
 
         /// <summary>Add an item to the cache</summary>
-        private INode Add(ItemType item)
+        private INode<T> Add(T item)
         {
             if (item == null)
                 return null;
             // see if item is already in index
-            INode node = null;
-            foreach (KeyValuePair<string, IIndex> keyValue in _indexList)
+            INode<T> node = null;
+            foreach (KeyValuePair<string, IIndex<T>> keyValue in _indexList)
                 if ((node = keyValue.Value.FindItem(item)) != null)
                     break;
             // dupl is used to prevent total count from growing when item is already in indexes (only new Nodes)
@@ -489,7 +437,7 @@ namespace FluidCaching
             if (!isDupl)
                 node = _lifeSpan.Add(item);
             // make sure node gets inserted into all indexes
-            foreach (KeyValuePair<string, IIndex> keyValue in _indexList)
+            foreach (KeyValuePair<string, IIndex<T>> keyValue in _indexList)
                 if (!keyValue.Value.AddItem(node))
                     isDupl = true;
             if (!isDupl)
@@ -500,9 +448,22 @@ namespace FluidCaching
         /// <summary>Remove all items from cache</summary>
         public void Clear()
         {
-            foreach (KeyValuePair<string, IIndex> keyValue in _indexList)
+            foreach (KeyValuePair<string, IIndex<T>> keyValue in _indexList)
                 keyValue.Value.ClearIndex();
             _lifeSpan.Clear();
         }
+    }
+
+    /// <summary>The public wrapper for a Index</summary>
+    public interface IIndex<T, TKey> where T : class
+    {
+        /// <summary>Getter for index</summary>
+        /// <param name="key">key to find (or load if needed)</param>
+        /// <returns>the object value associated with the cache</returns>
+        T this[TKey key] { get; }
+
+        /// <summary>Delete object that matches key from cache</summary>
+        /// <param name="key">key to find</param>
+        void Remove(TKey key);
     }
 }
