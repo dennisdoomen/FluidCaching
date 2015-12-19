@@ -1,11 +1,24 @@
+using System.Threading.Tasks;
+
 namespace FluidCaching
 {
-    /// <summary>Because there is no auto inheritance between generic types, this interface is used to send messages to Index objects</summary>
-    internal interface IIndex<T> where T : class
+    /// <summary>
+    /// The public wrapper for a Index
+    /// </summary>
+    public interface IIndex<T, TKey> where T : class
     {
-        void ClearIndex();
-        bool AddItem(INode<T> item);
-        INode<T> FindItem(T item);
-        int RebuildIndex();
+        /// <summary>
+        /// Getter for index
+        /// </summary>
+        /// <param name="key">key to find (or load if needed)</param>
+        /// <param name="item">
+        /// An optional delegate that is used to create the actual object if it doesn't exist in the cache.
+        /// </param>
+        /// <returns>the object value associated with the cache</returns>
+        Task<T> GetItem(TKey key, ItemLoader<T, TKey> loadItem);
+
+        /// <summary>Delete object that matches key from cache</summary>
+        /// <param name="key">key to find</param>
+        void Remove(TKey key);
     }
 }
