@@ -15,7 +15,7 @@ properties {
 	$RunTests = $false
 }
 
-task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, RestoreNugetPackages, Compile, BuildPackage, PublishToMyget
+task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, RestoreNugetPackages, Compile, RunTests, BuildPackage, PublishToMyget
 
 task Clean {	
     TeamCity-Block "Clean" {
@@ -55,10 +55,14 @@ task ApplyPackageVersioning -depends ExtractVersionsFromGit {
 }
 
 task RestoreNugetPackages {
-	TeamCity-Block "Restoring NuGet packages" {
-		
-		& $Nuget restore "$BaseDirectory\FluidCaching.sln"	
-	}
+    $packageConfigs = Get-ChildItem $BaseDirectory -Recurse | where{$_.Name -eq "packages.config"}
+
+    foreach($packageConfig in $packageConfigs){
+    	Write-Host "Restoring" $packageConfig.FullName 
+    	exec { 
+            . "$Nuget" install $packageConfig.FullName -OutputDirectory "$BaseDirectory\Packages" -ConfigFile "$BaseDirectory\NuGet.Config"
+        }
+    }
 }
 
 task Compile {
@@ -76,6 +80,23 @@ task BuildPackage {
 	
 		& $Nuget pack "$SrcDirectory\.nuspec" -o "$ArtifactsDirectory\" 
 	}
+}
+
+task RunTests -depends Compile -Description "Running all unit tests." {
+    $xunitRunner = "$BaseDirectory\Packages\xunit.runner.console.2.0.0\tools\xunit.console.exe"
+	
+    if (!(Test-Path $ArtifactsDirectory)) {
+		New-Item $ArtifactsDirectory -Type Directory
+	}
+
+	Get-ChildItem "$BaseDirectory\Tests" -Recurse -Include *.Specs.dll | 
+		Where-Object { ($_.FullName -notlike "*obj*") } | 
+			% {
+				$project = $_.BaseName
+	
+				Write-Host "Running the unit tests in $_"
+				exec { . $xunitRunner "$_" -html "$ArtifactsDirectory\$project.html"  }
+			}
 }
 
 task PublishToMyget -precondition { return $NuGetPushSource -and $NuGetApiKey } {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace FluidCaching.Specs
 {
@@ -15,5 +16,23 @@ namespace FluidCaching.Specs
         // TODO: When new objects added rapidly through a get, it should register the cache misses per minute
         // TODO: When existing objects are returned through a get, it should register the cache hits per minute
         // TODO: When concurrently adding and removing items, it should end up being in a consistent state
+
+        [Fact]
+        public void When_an_objects_minimum_age_is_not_reached_yet_and_capacity_is_exceeded_it_should_still_retain_it()
+        {
+            //-----------------------------------------------------------------------------------------------------------
+            // Arrange
+            //-----------------------------------------------------------------------------------------------------------
+            
+
+            //-----------------------------------------------------------------------------------------------------------
+            // Act
+            //-----------------------------------------------------------------------------------------------------------
+
+
+            //-----------------------------------------------------------------------------------------------------------
+            // Assert
+            //-----------------------------------------------------------------------------------------------------------
+        }
     }
 }
