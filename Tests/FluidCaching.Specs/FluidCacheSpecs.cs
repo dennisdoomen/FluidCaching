@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Chill;
+using FluentAssertions;
 using Xunit;
 
 namespace FluidCaching.Specs
 {
-    public class FluidCacheSpecs
+    namespace FluidCacheSpecs
     {
         // TODO: When an object's minimal age is not reached yet, it should be able allowed to exceed its capacity
         // TODO: When an object's minimal age is exceeded, the maxmium capacity must not be exceeded
@@ -17,22 +16,83 @@ namespace FluidCaching.Specs
         // TODO: When existing objects are returned through a get, it should register the cache hits per minute
         // TODO: When concurrently adding and removing items, it should end up being in a consistent state
 
-        [Fact]
-        public void When_an_objects_minimum_age_is_not_reached_yet_and_capacity_is_exceeded_it_should_still_retain_it()
+        public class When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached : GivenWhenThen<string>
         {
-            //-----------------------------------------------------------------------------------------------------------
-            // Arrange
-            //-----------------------------------------------------------------------------------------------------------
-            
+            private DateTime now;
+            private FluidCache<string> cache;
+            private IIndex<string, string> index;
 
-            //-----------------------------------------------------------------------------------------------------------
-            // Act
-            //-----------------------------------------------------------------------------------------------------------
+            public When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached()
+            {
+                Given(() =>
+                {
+                    now = 25.December(2015).At(10, 22);
 
+                    int capacity = 1;
 
-            //-----------------------------------------------------------------------------------------------------------
-            // Assert
-            //-----------------------------------------------------------------------------------------------------------
+                    cache = new FluidCache<string>(capacity, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1), () => now, null);
+                    index = cache.AddIndex("strings", s => s, key => Task.FromResult(key));
+                });
+
+                When(async () =>
+                {
+                    await index.GetItem("item1");
+                    return await index.GetItem("item2");
+                });
+            }
+
+            [Fact(Skip = "")]
+            public void Then_it_should_still_allow_adding_another_object()
+            {
+                Result.Should().Be("item2");
+            }
+
+            [Fact(Skip = "")]
+            public void Then_it_should_retain_the_object_which_minimum_age_has_not_been_reached()
+            {
+                index.Count.Should().Be(2);
+            }
+        }
+
+        public class When_capacity_is_at_max_and_an_objects_minimal_age_has_been_reached : GivenWhenThen<string>
+        {
+            private DateTime now;
+            private FluidCache<string> cache;
+            private IIndex<string, string> index;
+
+            public When_capacity_is_at_max_and_an_objects_minimal_age_has_been_reached()
+            {
+                Given(() =>
+                {
+                    now = 25.December(2015).At(10, 22);
+
+                    int capacity = 1;
+
+                    cache = new FluidCache<string>(capacity, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1), () => now, null);
+                    index = cache.AddIndex("strings", s => s, key => Task.FromResult(key));
+                });
+
+                When(async () =>
+                {
+                    await index.GetItem("item1");
+
+                    now = now.AddMinutes(6);
+
+                    return await index.GetItem("item2");
+                });
+            }
+
+            [Fact(Skip = "")]
+            public void Then_it_should_still_allow_adding_another_object()
+            {
+                Result.Should().Be("item2");
+            }
+
+            [Fact(Skip = "")]
+            public void Then_it_should_remove_the_expired_object_from_the_cache()
+            {
+                // Items are never removed from the index, because it holds a weak reference
+            }
         }
     }
 }
