@@ -34,7 +34,7 @@ namespace FluidCaching
                 RegisterWithLifespanManager();
 
                 Bag = manager.CurrentBag;
-                Interlocked.Increment(ref manager.itemsInBag);
+                Interlocked.Increment(ref manager.itemsInCurrentBag);
             }
         }
 

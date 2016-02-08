@@ -8,28 +8,28 @@ namespace FluidCaching
     internal class LifespanManager<T> : IEnumerable<INode<T>> where T : class
     {
         private readonly FluidCache<T> owner;
-        private readonly TimeSpan _minAge;
+        private readonly TimeSpan minAge;
         private readonly GetNow getNow;
-        private readonly TimeSpan _maxAge;
-        private readonly TimeSpan _timeSlice;
+        private readonly TimeSpan maxAge;
+        private readonly TimeSpan validatyCheckInterval;
         private DateTime nextValidityCheck;
         private readonly int bagItemLimit;
 
         private readonly AgeBag<T>[] bags;
         private AgeBag<T> currentBag;
-        internal int itemsInBag;
-        private int current;
-        private int _oldest;
+        internal int itemsInCurrentBag;
+        private int currentBagIndex;
+        private int oldestBagIndex;
         private const int nrBags = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
 
         public LifespanManager(FluidCache<T> owner, TimeSpan minAge, TimeSpan maxAge, GetNow getNow)
         {
             this.owner = owner;
             int maxMS = Math.Min((int) maxAge.TotalMilliseconds, 12*60*60*1000); // max = 12 hours
-            _minAge = minAge;
+            this.minAge = minAge;
             this.getNow = getNow;
-            _maxAge = TimeSpan.FromMilliseconds(maxMS);
-            _timeSlice = TimeSpan.FromMilliseconds(maxMS/240.0); // max timeslice = 3 min
+            this.maxAge = TimeSpan.FromMilliseconds(maxMS);
+            validatyCheckInterval = TimeSpan.FromMilliseconds(maxMS/240.0); // max timeslice = 3 min
             bagItemLimit = this.owner.Capacity/20; // max 5% of capacity per bag
             bags = new AgeBag<T>[nrBags];
 
@@ -57,14 +57,14 @@ namespace FluidCaching
 
             // Note: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
             // does not wait for a lock, if lock is currently held then skip and let next Touch perform cleanup.
-            if (((itemsInBag > bagItemLimit) || (now > nextValidityCheck)) && Monitor.TryEnter(this))
+            if (((itemsInCurrentBag > bagItemLimit) || (now > nextValidityCheck)) && Monitor.TryEnter(this))
             {
                 try
                 {
-                    if ((itemsInBag > bagItemLimit) || (now > nextValidityCheck))
+                    if ((itemsInCurrentBag > bagItemLimit) || (now > nextValidityCheck))
                     {
                         // if cache is no longer valid throw contents away and start over, else cleanup old items
-                        if ((current > 1000000) || ((ValidateCache != null) && !ValidateCache()))
+                        if ((currentBagIndex > 1000000) || ((ValidateCache != null) && !ValidateCache()))
                         {
                             owner.Clear();
                         }
@@ -95,13 +95,13 @@ namespace FluidCaching
             lock (this)
             {
                 //calculate how many items should be removed
-                DateTime maxAge = now.Subtract(_maxAge);
-                DateTime minAge = now.Subtract(_minAge);
-                int itemsToRemove = owner.ItemCount - owner.TotalCount;
-                AgeBag<T> bag = bags[_oldest%nrBags];
+                DateTime maxAge = now.Subtract(this.maxAge);
+                DateTime minAge = now.Subtract(this.minAge);
 
-                while (current != _oldest &&
-                       (current - _oldest > nrBags - 5 || bag.StartTime < maxAge ||
+                int itemsToRemove = owner.ActualCount - owner.TotalCount;
+                AgeBag<T> bag = bags[oldestBagIndex % nrBags];
+
+                while ((currentBagIndex != oldestBagIndex) && ((currentBagIndex - oldestBagIndex) > (nrBags - 5) || bag.StartTime < maxAge ||
                         (itemsToRemove > 0 && bag.StopTime > minAge)))
                 {
                     // cache is still too big / old so remove oldest bag
@@ -127,13 +127,16 @@ namespace FluidCaching
                                 node.Bag.First = node;
                             }
                         }
+
                         node = next;
                     }
+
                     // increment oldest bag
-                    bag = bags[(++_oldest)%nrBags];
+                    ++oldestBagIndex;
+                    bag = bags[oldestBagIndex % nrBags];
                 }
 
-                OpenCurrentBag(now, ++current);
+                OpenCurrentBag(now, ++currentBagIndex);
                 owner.CheckIndexValid();
             }
         }
@@ -160,7 +163,7 @@ namespace FluidCaching
                 owner.ResetCounters();
                 
                 // reset age bags
-                OpenCurrentBag(getNow(), _oldest = 0);
+                OpenCurrentBag(getNow(), oldestBagIndex = 0);
             }
         }
 
@@ -174,21 +177,26 @@ namespace FluidCaching
                 {
                     this.currentBag.StopTime = now;
                 }
+                
                 // open new age bag for next time slice
-                AgeBag<T> currentBag = bags[(current = bagNumber)%nrBags];
+                currentBagIndex = bagNumber;
+
+                AgeBag<T> currentBag = bags[currentBagIndex % nrBags];
                 currentBag.StartTime = now;
                 currentBag.First = null;
+
                 this.currentBag = currentBag;
+                
                 // reset counters for CheckValidity()
-                nextValidityCheck = now.Add(_timeSlice);
-                itemsInBag = 0;
+                nextValidityCheck = now.Add(validatyCheckInterval);
+                itemsInCurrentBag = 0;
             }
         }
 
         /// <summary>Create item enumerator</summary>
         public IEnumerator<INode<T>> GetEnumerator()
         {
-            for (int bagNumber = current; bagNumber >= _oldest; --bagNumber)
+            for (int bagNumber = currentBagIndex; bagNumber >= oldestBagIndex; --bagNumber)
             {
                 AgeBag<T> bag = bags[bagNumber];
                 // if bag.first == null then bag is empty or being cleaned up, so skip it!

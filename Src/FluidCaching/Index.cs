@@ -15,7 +15,7 @@ namespace FluidCaching
         private readonly LifespanManager<T> lifespanManager;
         private readonly Dictionary<TKey, WeakReference> index;
         private readonly GetKey<T, TKey> _getKey;
-        private readonly ItemLoader<T, TKey> loadItem;
+        private readonly ItemLoader<TKey, T> loadItem;
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
         /// <summary>constructor</summary>
@@ -23,7 +23,7 @@ namespace FluidCaching
         /// <param name="lifespanManager"></param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
-        public Index(FluidCache<T> owner, int capacity, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemLoader<T, TKey> loadItem)
+        public Index(FluidCache<T> owner, int capacity, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemLoader<TKey, T> loadItem)
         {
             Debug.Assert(owner != null, "owner argument required");
             Debug.Assert(getKey != null, "GetKey delegate required");
@@ -38,14 +38,14 @@ namespace FluidCaching
         /// <summary>Getter for index</summary>
         /// <param name="key">key to find (or load if needed)</param>
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-        public async Task<T> GetItem(TKey key, ItemLoader<T, TKey> loadItem = null)
+        public async Task<T> GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
         {
             INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
             lifespanManager.CheckValidity();
 
-            ItemLoader<T, TKey> loader = loadItem ?? this.loadItem;
+            ItemLoader<TKey, T> loader = loadItem ?? this.loadItem;
 
             if ((node?.Value == null) && (loader != null))
             {
@@ -100,9 +100,9 @@ namespace FluidCaching
             TKey key = _getKey(item.Value);
             return RWLock.GetWriteLock(_lock, LockTimeout, delegate
             {
-                bool isDup = index.ContainsKey(key);
+                bool alreadyExisted = index.ContainsKey(key);
                 index[key] = new WeakReference(item, false);
-                return isDup;
+                return alreadyExisted;
             });
         }
 

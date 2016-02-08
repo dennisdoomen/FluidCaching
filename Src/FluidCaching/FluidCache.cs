@@ -30,7 +30,7 @@ namespace FluidCaching
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
-        private int itemCount;
+        private int actualCount;
         private int totalCount;
 
         /// <summary>Constructor</summary>
@@ -52,8 +52,14 @@ namespace FluidCaching
 
         public int Capacity { get; }
 
-        public int ItemCount => itemCount;
+        /// <summary>
+        /// Number of items currently un the cache. 
+        /// </summary>
+        public int ActualCount => actualCount;
 
+        /// <summary>
+        /// Number of items added to the cache since it was created.
+        /// </summary>
         public int TotalCount => totalCount;
 
         /// <summary>Retrieve a index by name</summary>
@@ -64,9 +70,9 @@ namespace FluidCaching
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
-        public Task<T> Get<TType>(string indexName, TType key, ItemLoader<T, TType> item = null)
+        public Task<T> Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
         {
-            IIndex<T, TType> index = GetIndex<TType>(indexName);
+            IIndex<T, TKey> index = GetIndex<TKey>(indexName);
             return (index == null) ? Task.FromResult(default(T)) : index.GetItem(key, item);
         }
 
@@ -76,7 +82,7 @@ namespace FluidCaching
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="item">delegate to load object if it is not found in index</param>
         /// <returns>the newly created index</returns>
-        public IIndex<T, TKey> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<T, TKey> item = null)
+        public IIndex<T, TKey> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
         {
             var index = new Index<T, TKey>(this, Capacity, lifeSpan, getKey, item);
             indexList[indexName] = index;
@@ -101,7 +107,33 @@ namespace FluidCaching
                 return null;
             }
 
-            // see if item is already in index
+            INode<T> node = FindExistingNode(item);
+
+            // dupl is used to prevent total count from growing when item is already in indexes (only new Nodes)
+            bool isDuplicate = (node != null) && (node.Value == item);
+            if (!isDuplicate)
+            {
+                node = lifeSpan.Add(item);
+            }
+
+            foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
+            {
+                if (keyValue.Value.AddItem(node))
+                {
+                    isDuplicate = true;
+                }
+            }
+
+            if (!isDuplicate)
+            {
+                Interlocked.Increment(ref totalCount);
+            }
+
+            return node;
+        }
+
+        private INode<T> FindExistingNode(T item)
+        {
             INode<T> node = null;
             foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
             {
@@ -109,28 +141,6 @@ namespace FluidCaching
                 {
                     break;
                 }
-            }
-
-            // dupl is used to prevent total count from growing when item is already in indexes (only new Nodes)
-            bool isDupl = (node != null && node.Value == item);
-            if (!isDupl)
-            {
-                node = lifeSpan.Add(item);
-                Interlocked.Increment(ref itemCount);
-            }
-
-            // make sure node gets inserted into all indexes
-            foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
-            {
-                if (!keyValue.Value.AddItem(node))
-                {
-                    isDupl = true;
-                }
-            }
-
-            if (!isDupl)
-            {
-                Interlocked.Increment(ref totalCount);
             }
 
             return node;
@@ -150,31 +160,31 @@ namespace FluidCaching
         internal void CheckIndexValid()
         {
             // if indexes are getting too big its time to rebuild them
-            if (TotalCount - ItemCount > Capacity)
+            if ((totalCount - actualCount) > Capacity)
             {
                 foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
                 {
-                    itemCount = keyValue.Value.RebuildIndex();
+                    actualCount = keyValue.Value.RebuildIndex();
                 }
 
-                totalCount = itemCount;
+                totalCount = actualCount;
             }
         }
 
         public void ResetCounters()
         {
-            itemCount = 0;
+            actualCount = 0;
             totalCount = 0;
         }
 
         public void RegisterItem()
         {
-            Interlocked.Increment(ref itemCount);
+            Interlocked.Increment(ref actualCount);
         }
 
         public void UnregisterItem()
         {
-            Interlocked.Decrement(ref itemCount);
+            Interlocked.Decrement(ref actualCount);
         }
     }
 }
