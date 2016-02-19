@@ -63,16 +63,16 @@ namespace FluidCaching
         public int TotalCount => totalCount;
 
         /// <summary>Retrieve a index by name</summary>
-        public IIndex<T, TKey> GetIndex<TKey>(string indexName)
+        public IIndex<TKey, T> GetIndex<TKey>(string indexName)
         {
             IIndexManagement<T> index;
-            return (indexList.TryGetValue(indexName, out index) ? index as IIndex<T, TKey> : null);
+            return (indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null);
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
         public Task<T> Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
         {
-            IIndex<T, TKey> index = GetIndex<TKey>(indexName);
+            IIndex<TKey, T> index = GetIndex<TKey>(indexName);
             return (index == null) ? Task.FromResult(default(T)) : index.GetItem(key, item);
         }
 
@@ -82,9 +82,9 @@ namespace FluidCaching
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="item">delegate to load object if it is not found in index</param>
         /// <returns>the newly created index</returns>
-        public IIndex<T, TKey> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
+        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
         {
-            var index = new Index<T, TKey>(this, Capacity, lifeSpan, getKey, item);
+            var index = new Index<TKey, T>(this, Capacity, lifeSpan, getKey, item);
             indexList[indexName] = index;
             return index;
         }

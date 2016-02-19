@@ -5,7 +5,7 @@ namespace FluidCaching
     /// <summary>
     /// The public wrapper for a Index
     /// </summary>
-    public interface IIndex<T, TKey> where T : class
+    public interface IIndex<TKey, T> where T : class
     {
         /// <summary>
         /// Getter for index

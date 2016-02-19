@@ -8,7 +8,7 @@ using Platform.Utility;
 namespace FluidCaching
 {
     /// <summary>Index provides dictionary key / value access to any object in cache</summary>
-    internal class Index<T, TKey> : IIndex<T, TKey>, IIndexManagement<T> where T : class
+    internal class Index<TKey, T> : IIndex<TKey, T>, IIndexManagement<T> where T : class
     {
         private const int LockTimeout = 30000;
         private readonly FluidCache<T> owner;

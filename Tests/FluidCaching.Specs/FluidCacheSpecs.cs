@@ -19,7 +19,7 @@ namespace FluidCaching.Specs
 
         public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
         {
-            private IIndex<User, long> indexById;
+            private IIndex<long, User> indexById;
             private FluidCache<User> cache;
 
             public When_requesting_a_large_number_of_items_from_the_cache()
