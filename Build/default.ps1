@@ -8,7 +8,6 @@ properties {
 	$ArtifactsDirectory = "$BaseDirectory\Artifacts"
 
 	$NuGetPushSource = ""
-	$NuGetApiKey = ""
 	
     $MsBuildLoggerPath = ""
 	$Branch = ""
@@ -20,6 +19,7 @@ task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, Res
 task Clean {	
     TeamCity-Block "Clean" {
 		Get-ChildItem $PackageDirectory *.nupkg | ForEach { Remove-Item $_.FullName }
+	    exec { msbuild $SlnFile /p:Configuration=Release /t:Clean $logger}
     }
 }
 
@@ -89,21 +89,15 @@ task RunTests -depends Compile -Description "Running all unit tests." {
 		New-Item $ArtifactsDirectory -Type Directory
 	}
 
-	Get-ChildItem "$BaseDirectory\Tests" -Recurse -Include *.Specs.dll | 
-		Where-Object { ($_.FullName -notlike "*obj*") } | 
-			% {
-				$project = $_.BaseName
-	
-				Write-Host "Running the unit tests in $_"
-				exec { . $xunitRunner "$_" -html "$ArtifactsDirectory\$project.html"  }
-			}
+	exec { . $xunitRunner "$BaseDirectory\Tests\FluidCaching.Specs\bin\Release\FluidCaching.Specs.dll" -html "$ArtifactsDirectory\$project.html"  }
 }
+	
 
-task PublishToMyget -precondition { return $NuGetPushSource -and $NuGetApiKey } {
+task PublishToMyget -precondition { return $NuGetPushSource -and $env:NuGetApiKey } {
     TeamCity-Block "Publishing NuGet Package to Myget" {  
 		$packages = Get-ChildItem $ArtifactsDirectory *.nupkg
 		foreach ($package in $packages) {
-			& $Nuget push $package.FullName $NuGetApiKey -Source "$NuGetPushSource"
+			& $Nuget push $package.FullName $env:NuGetApiKey -Source "$NuGetPushSource"
 		}
 	}
 }
