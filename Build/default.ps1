@@ -20,6 +20,7 @@ task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, Res
 task Clean {	
     TeamCity-Block "Clean" {
 		Get-ChildItem $PackageDirectory *.nupkg | ForEach { Remove-Item $_.FullName }
+	    exec { msbuild $SlnFile /p:Configuration=Release /t:Clean $logger}
     }
 }
 
