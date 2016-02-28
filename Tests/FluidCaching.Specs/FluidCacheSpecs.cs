@@ -17,43 +17,37 @@ namespace FluidCaching.Specs
         // TODO: When existing objects are returned through a get, it should register the cache hits per minute
         // TODO: When concurrently adding and removing items, it should end up being in a consistent state
 
-//        public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
-//        {
-//            private IIndex<long, User> indexById;
-//            private FluidCache<User> cache;
-//
-//            public When_requesting_a_large_number_of_items_from_the_cache()
-//            {
-//                Given(() =>
-//                {
-//                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
-//                    indexById = cache.AddIndex("index", user => user.Id);
-//                });
-//
-//
-//                When(() =>
-//                {
-//
-//                    Func<Task> whenActionAsync = async () =>
-//                    {
-//                        foreach (int key in Enumerable.Range(0, 1000))
-//                        {
-//                            await Task.Delay(10);
-//                            await indexById.GetItem(key, id => Task.FromResult(new User { Id = id }));
-//                        }
-//                    };
-//
-//                    whenActionAsync().RunSynchronously();
-//                });
-//            }
-//
-//            [Fact]
-//            public void Then_the_total_number_of_items_should_match()
-//            {
-//                cache.TotalCount.Should().Be(1000);
-//                cache.ActualCount.Should().BeLessThan(1000);
-//            }
-//        }
+        public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
+        {
+            private IIndex<long, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_requesting_a_large_number_of_items_from_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id);
+                });
+
+
+                When(async () =>
+                {
+                    foreach (int key in Enumerable.Range(0, 1000))
+                    {
+                        await Task.Delay(10);
+                        await indexById.GetItem(key, id => Task.FromResult(new User {Id = id}));
+                    }
+                });
+            }
+
+            [Fact]
+            public void Then_the_total_number_of_items_should_match()
+            {
+                cache.TotalCount.Should().Be(1000);
+                cache.ActualCount.Should().BeLessThan(1000);
+            }
+        }
 
         public class When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached : GivenWhenThen<string>
         {
