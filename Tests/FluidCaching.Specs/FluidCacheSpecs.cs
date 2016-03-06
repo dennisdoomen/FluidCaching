@@ -9,8 +9,6 @@ namespace FluidCaching.Specs
 {
     namespace FluidCacheSpecs
     {
-        // TODO: When an object's minimal age is not reached yet, it should be able allowed to exceed its capacity
-        // TODO: When an object's minimal age is exceeded, the maxmium capacity must not be exceeded
         // TODO: When an object's maximum age is exceeded, it should be removed after a while
         // TODO: When objects are added, it should automatically clean-up
         // TODO: When new objects added rapidly through a get, it should register the cache misses per minute
@@ -19,7 +17,7 @@ namespace FluidCaching.Specs
 
         public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
         {
-            private IIndex<long, User> indexById;
+            private IIndex<string, User> indexById;
             private FluidCache<User> cache;
 
             public When_requesting_a_large_number_of_items_from_the_cache()
@@ -36,7 +34,7 @@ namespace FluidCaching.Specs
                     foreach (int key in Enumerable.Range(0, 1000))
                     {
                         await Task.Delay(10);
-                        await indexById.GetItem(key, id => Task.FromResult(new User {Id = id}));
+                        await indexById.GetItem(key.ToString(), id => Task.FromResult(new User {Id = id}));
                     }
                 });
             }
@@ -49,11 +47,13 @@ namespace FluidCaching.Specs
             }
         }
 
-        public class When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached : GivenWhenThen<string>
+        public class When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached : GivenWhenThen<User>
         {
             private DateTime now;
-            private FluidCache<string> cache;
-            private IIndex<string, string> index;
+            private IIndex<string, User> index;
+            private User theUser;
+            private readonly TimeSpan minimumAge = 5.Minutes();
+            private int capacity = 20;
 
             public When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached()
             {
@@ -61,35 +61,53 @@ namespace FluidCaching.Specs
                 {
                     now = 25.December(2015).At(10, 22);
 
-                    int capacity = 1;
+                    var cache = new FluidCache<User>(capacity, minimumAge, TimeSpan.FromHours(1), () => now, null);
 
-                    cache = new FluidCache<string>(capacity, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1), () => now, null);
-                    index = cache.AddIndex("strings", s => s, key => Task.FromResult(key));
+                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
+                    {
+                        Id = key,
+                        Name = "key"
+                    }));
                 });
 
                 When(async () =>
                 {
-                    await index.GetItem("item1");
-                    return await index.GetItem("item2");
+                    theUser = await index.GetItem("the user");
+
+                    for (int id = 0; id < capacity; id++)
+                    {
+                        await index.GetItem("user " + id);
+                    }
+
+                    // Forward time
+                    now = now.Add(minimumAge - 1.Minutes());
+
+                    // Trigger evaluating of the cache
+                    await index.GetItem("some user");
+
+                    // Make sure any weak references are cleaned up
+                    GC.Collect();
+
+                    // Try to get the same user again.
+                    return await index.GetItem("the user");
                 });
             }
 
-            public void Then_it_should_still_allow_adding_another_object()
+            [Fact]
+            public void Then_it_should_retain_the_user_which_minimum_age_has_not_been_reached()
             {
-                Result.Should().Be("item2");
-            }
-
-            public void Then_it_should_retain_the_object_which_minimum_age_has_not_been_reached()
-            {
-                
+                Result.Should().BeSameAs(theUser);
             }
         }
 
-        public class When_capacity_is_at_max_and_an_objects_minimal_age_has_been_reached : GivenWhenThen<string>
+        public class When_capacity_is_at_max_and_an_objects_minimal_age_has_been_reached : GivenWhenThen<User>
         {
             private DateTime now;
-            private FluidCache<string> cache;
-            private IIndex<string, string> index;
+            private IIndex<string, User> index;
+            private User theUser;
+            private FluidCache<User> cache;
+            private readonly TimeSpan minimumAge = 5.Minutes();
+            private int capacity;
 
             public When_capacity_is_at_max_and_an_objects_minimal_age_has_been_reached()
             {
@@ -97,39 +115,50 @@ namespace FluidCaching.Specs
                 {
                     now = 25.December(2015).At(10, 22);
 
-                    int capacity = 1;
+                    capacity = 20;
 
-                    cache = new FluidCache<string>(capacity, TimeSpan.FromMinutes(5), TimeSpan.FromHours(1), () => now, null);
-                    index = cache.AddIndex("strings", s => s, key => Task.FromResult(key));
+                    cache = new FluidCache<User>(capacity, minimumAge, 1.Hours(), () => now);
+
+                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
+                    {
+                        Id = key,
+                        Name = "key"
+                    }));
                 });
 
                 When(async () =>
                 {
-                    await index.GetItem("item1");
+                    theUser = await index.GetItem("the user");
 
-                    now = now.AddMinutes(6);
+                    for (int id = 0; id < capacity; id++)
+                    {
+                        await index.GetItem("user " + id);
+                    }
 
-                    return await index.GetItem("item2");
+                    now = now.Add(minimumAge + 1.Minutes());
+
+                    // Trigger evaluating of the cache
+                    await index.GetItem("some user");
+
+                    // Make sure any weak references are cleaned up
+                    GC.Collect();
+
+                    // Try to get the same user again.
+                    return await index.GetItem("the user");
                 });
             }
 
-            [Fact(Skip = "")]
-            public void Then_it_should_still_allow_adding_another_object()
+            [Fact]
+            public void Then_it_should_have_removed_the_original_object_from_the_cache_and_create_a_new_one()
             {
-                Result.Should().Be("item2");
-            }
-
-            [Fact(Skip = "")]
-            public void Then_it_should_remove_the_expired_object_from_the_cache()
-            {
-                // Items are never removed from the index, because it holds a weak reference
+                Result.Should().NotBeSameAs(theUser);
             }
         }
     }
 
     public class User
     {
-        public long Id { get; set; }
+        public string Id { get; set; }
 
         public string Name { get; set; }
     }

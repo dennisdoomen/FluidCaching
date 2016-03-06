@@ -25,12 +25,12 @@ namespace FluidCaching
         public LifespanManager(FluidCache<T> owner, TimeSpan minAge, TimeSpan maxAge, GetNow getNow)
         {
             this.owner = owner;
-            int maxMS = Math.Min((int) maxAge.TotalMilliseconds, 12*60*60*1000); // max = 12 hours
+            double maxMS = Math.Min(maxAge.TotalMilliseconds, (double)12 * 60 * 60 * 1000); // max = 12 hours
             this.minAge = minAge;
             this.getNow = getNow;
             this.maxAge = TimeSpan.FromMilliseconds(maxMS);
             validatyCheckInterval = TimeSpan.FromMilliseconds(maxMS/240.0); // max timeslice = 3 min
-            bagItemLimit = this.owner.Capacity/20; // max 5% of capacity per bag
+            bagItemLimit = Math.Max(this.owner.Capacity/20, 1); // max 5% of capacity per bag
             bags = new AgeBag<T>[nrBags];
 
             for (int loop = nrBags - 1; loop >= 0; --loop)
@@ -38,7 +38,7 @@ namespace FluidCaching
                 bags[loop] = new AgeBag<T>();
             }
 
-            OpenCurrentBag(getNow(), 0);
+            OpenBag(0);
         }
 
         public AgeBag<T> CurrentBag => currentBag;
@@ -57,11 +57,11 @@ namespace FluidCaching
 
             // Note: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
             // does not wait for a lock, if lock is currently held then skip and let next Touch perform cleanup.
-            if (((itemsInCurrentBag > bagItemLimit) || (now > nextValidityCheck)) && Monitor.TryEnter(this))
+            if (RequiresCleanup && Monitor.TryEnter(this))
             {
                 try
                 {
-                    if ((itemsInCurrentBag > bagItemLimit) || (now > nextValidityCheck))
+                    if (RequiresCleanup)
                     {
                         // if cache is no longer valid throw contents away and start over, else cleanup old items
                         if ((currentBagIndex > 1000000) || ((ValidateCache != null) && !ValidateCache()))
@@ -81,6 +81,8 @@ namespace FluidCaching
             }
         }
 
+        private bool RequiresCleanup => (itemsInCurrentBag > bagItemLimit) || (getNow() > nextValidityCheck);
+
         /// <summary>
         /// Remove old items or items beyond capacity from LifespanMgr allowing them to be garbage collected
         /// </summary>
@@ -94,15 +96,10 @@ namespace FluidCaching
         {
             lock (this)
             {
-                //calculate how many items should be removed
-                DateTime maxAge = now.Subtract(this.maxAge);
-                DateTime minAge = now.Subtract(this.minAge);
-
-                int itemsToRemove = owner.ActualCount - owner.TotalCount;
+                int itemsToRemove = owner.ActualCount - owner.Capacity;
                 AgeBag<T> bag = bags[oldestBagIndex % nrBags];
 
-                while ((currentBagIndex != oldestBagIndex) && ((currentBagIndex - oldestBagIndex) > (nrBags - 5) || bag.StartTime < maxAge ||
-                        (itemsToRemove > 0 && bag.StopTime > minAge)))
+                while (AlmostOutOfBags || bag.HasExpired(maxAge, now) || (itemsToRemove > 0 && bag.HasReachedMinimumAge(minAge, now)))
                 {
                     // cache is still too big / old so remove oldest bag
                     Node<T> node = bag.First;
@@ -134,13 +131,24 @@ namespace FluidCaching
                     // increment oldest bag
                     ++oldestBagIndex;
                     bag = bags[oldestBagIndex % nrBags];
+
+                    if (HasProcessedAllBags)
+                    {
+                        break;
+                    }
                 }
 
-                OpenCurrentBag(now, ++currentBagIndex);
+                OpenBag(++currentBagIndex);
                 owner.CheckIndexValid();
             }
         }
 
+        private bool AlmostOutOfBags
+        {
+            get { return (currentBagIndex - oldestBagIndex) > (nrBags - 5); }
+        }
+
+        private bool HasProcessedAllBags => (oldestBagIndex == currentBagIndex);
 
         /// <summary>Remove all items from LifespanMgr and reset</summary>
         public void Clear()
@@ -163,15 +171,17 @@ namespace FluidCaching
                 owner.ResetCounters();
                 
                 // reset age bags
-                OpenCurrentBag(getNow(), oldestBagIndex = 0);
+                OpenBag(oldestBagIndex = 0);
             }
         }
 
         /// <summary>ready a new current AgeBag for use and close the previous one</summary>
-        private void OpenCurrentBag(DateTime now, int bagNumber)
+        private void OpenBag(int bagNumber)
         {
             lock (this)
             {
+                DateTime now = getNow();
+
                 // close last age bag
                 if (this.currentBag != null)
                 {
@@ -198,7 +208,7 @@ namespace FluidCaching
         {
             for (int bagNumber = currentBagIndex; bagNumber >= oldestBagIndex; --bagNumber)
             {
-                AgeBag<T> bag = bags[bagNumber];
+                AgeBag<T> bag = bags[bagNumber % nrBags];
                 // if bag.first == null then bag is empty or being cleaned up, so skip it!
                 for (Node<T> node = bag.First; node != null && bag.First != null; node = node.Next)
                 {

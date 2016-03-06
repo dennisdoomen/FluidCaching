@@ -10,5 +10,17 @@ namespace FluidCaching
         public DateTime StopTime { get; set; }
 
         public Node<T> First { get; set; }
+
+        public bool HasExpired(TimeSpan maxAge, DateTime now)
+        {
+            DateTime expirationPoint = now.Subtract(maxAge);
+
+            return StartTime < expirationPoint;
+        }
+
+        public bool HasReachedMinimumAge(TimeSpan minAge, DateTime now)
+        {
+            return (now - StopTime) > minAge;
+        }
     }
 }

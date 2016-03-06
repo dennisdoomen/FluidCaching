@@ -1,39 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Xunit;
+using FluidCaching;
 
-namespace FluidCaching.Specs
+namespace ConsoleApp
 {
-    public class LoadTests
+    class Program
     {
-        [Fact]
-        [Trait("Category", "LongRunning")]
-        public void When_scenario_it_should_behavior()
+        static void Main(string[] args)
         {
-            //-----------------------------------------------------------------------------------------------------------
-            // Arrange
-            //-----------------------------------------------------------------------------------------------------------
-            var cache = new FluidCache<string>(5000, 0.Seconds(), 120.Seconds(), () => DateTime.Now, null);
+            var cache = new FluidCache<string>(20, 10.Seconds(), 120.Seconds(), () => DateTime.Now, null);
             cache.AddIndex("index", v => int.Parse(v));
 
             //-----------------------------------------------------------------------------------------------------------
             // Act
             //-----------------------------------------------------------------------------------------------------------
-            Parallel.For(0, 10000, key =>
+            Parallel.For(0, 2000, key =>
             {
+                Thread.Sleep(10);
                 cache.Get("index", key, k => Task.FromResult(k.ToString())).Wait();
             });
 
             //-----------------------------------------------------------------------------------------------------------
             // Assert
             //-----------------------------------------------------------------------------------------------------------
-            cache.ActualCount.Should().BeLessOrEqualTo(5000);
-            cache.TotalCount.Should().BeLessThan(10000);
+            Console.WriteLine($"ActualCount {cache.ActualCount}");
+            Console.WriteLine($"TotalCount {cache.TotalCount}");
         }
     }
 }

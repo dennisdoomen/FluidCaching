@@ -41,7 +41,7 @@ namespace FluidCaching
         /// <param name="validateCache">
         /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once per 10 seconds
         /// </param>
-        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache)
+        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache= null)
         {
             Capacity = capacity;
             lifeSpan = new LifespanManager<T>(this, minAge, maxAge, getNow)
