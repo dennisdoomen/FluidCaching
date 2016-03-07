@@ -32,7 +32,7 @@ namespace FluidCaching.Specs
             //-----------------------------------------------------------------------------------------------------------
             // Assert
             //-----------------------------------------------------------------------------------------------------------
-            cache.ActualCount.Should().BeLessOrEqualTo(5000);
+            cache.ActualCount.Should().BeLessOrEqualTo(10000);
             cache.TotalCount.Should().BeLessThan(10000);
         }
     }
