@@ -34,7 +34,7 @@ namespace FluidCaching.Specs
                     foreach (int key in Enumerable.Range(0, 1000))
                     {
                         await Task.Delay(10);
-                        await indexById.GetItem(key.ToString(), id => Task.FromResult(new User {Id = id}));
+                        await indexById.GetItem(key.ToString(), id => new User {Id = id});
                     }
                 });
             }
@@ -63,11 +63,11 @@ namespace FluidCaching.Specs
 
                     var cache = new FluidCache<User>(capacity, minimumAge, TimeSpan.FromHours(1), () => now, null);
 
-                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
+                    index = cache.AddIndex("UsersById", u => u.Id, key => new User
                     {
                         Id = key,
                         Name = "key"
-                    }));
+                    });
                 });
 
                 When(async () =>
@@ -119,11 +119,11 @@ namespace FluidCaching.Specs
 
                     cache = new FluidCache<User>(capacity, minimumAge, 1.Hours(), () => now);
 
-                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
+                    index = cache.AddIndex("UsersById", u => u.Id, key => new User
                     {
                         Id = key,
                         Name = "key"
-                    }));
+                    });
                 });
 
                 When(async () =>

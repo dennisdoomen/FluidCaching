@@ -19,7 +19,7 @@ namespace ConsoleApp
             Parallel.For(0, 2000, key =>
             {
                 Thread.Sleep(10);
-                cache.Get("index", key, k => Task.FromResult(k.ToString())).Wait();
+                cache.Get("index", key, k => k.ToString()).Wait();
             });
 
             //-----------------------------------------------------------------------------------------------------------
