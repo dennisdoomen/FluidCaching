@@ -70,7 +70,9 @@ namespace FluidCaching
             WeakReference<INode<T>> reference;
             INode<T> node;
             if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
+            {
                 return node;
+            }
 
             return null;
         }
