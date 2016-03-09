@@ -70,10 +70,10 @@ namespace FluidCaching
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
-        public Task<T> Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
+        public T Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
-            return (index == null) ? Task.FromResult(default(T)) : index.GetItem(key, item);
+            return (index == null) ? default(T) : index.GetItem(key, item);
         }
 
         /// <summary>AddAsNode a new index to the cache</summary>
