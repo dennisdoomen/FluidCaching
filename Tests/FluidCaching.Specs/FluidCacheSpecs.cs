@@ -34,7 +34,7 @@ namespace FluidCaching.Specs
                     foreach (int key in Enumerable.Range(0, 1000))
                     {
                         await Task.Delay(10);
-                        await indexById.GetItem(key.ToString(), id => new User {Id = id});
+                        indexById.GetItem(key.ToString(), id => new User {Id = id});
                     }
                 });
             }
@@ -70,26 +70,26 @@ namespace FluidCaching.Specs
                     });
                 });
 
-                When(async () =>
+                When(() =>
                 {
-                    theUser = await index.GetItem("the user");
+                    theUser = index.GetItem("the user");
 
                     for (int id = 0; id < capacity; id++)
                     {
-                        await index.GetItem("user " + id);
+                        index.GetItem("user " + id);
                     }
 
                     // Forward time
                     now = now.Add(minimumAge - 1.Minutes());
 
                     // Trigger evaluating of the cache
-                    await index.GetItem("some user");
+                    index.GetItem("some user");
 
                     // Make sure any weak references are cleaned up
                     GC.Collect();
 
                     // Try to get the same user again.
-                    return await index.GetItem("the user");
+                    return index.GetItem("the user");
                 });
             }
 
@@ -126,25 +126,25 @@ namespace FluidCaching.Specs
                     });
                 });
 
-                When(async () =>
+                When(() =>
                 {
-                    theUser = await index.GetItem("the user");
+                    theUser = index.GetItem("the user");
 
                     for (int id = 0; id < capacity; id++)
                     {
-                        await index.GetItem("user " + id);
+                        index.GetItem("user " + id);
                     }
 
                     now = now.Add(minimumAge + 1.Minutes());
 
                     // Trigger evaluating of the cache
-                    await index.GetItem("some user");
+                    index.GetItem("some user");
 
                     // Make sure any weak references are cleaned up
                     GC.Collect();
 
                     // Try to get the same user again.
-                    return await index.GetItem("the user");
+                    return index.GetItem("the user");
                 });
             }
 

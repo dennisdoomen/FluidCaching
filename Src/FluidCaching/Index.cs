@@ -11,6 +11,7 @@ namespace FluidCaching
     /// <summary>Index provides dictionary key / value access to any object in cache</summary>
     internal class Index<TKey, T> : IIndex<TKey, T>, IIndexManagement<T> where T : class
     {
+        private const int LockTimeout = 30000;
         private readonly FluidCache<T> owner;
         private readonly LifespanManager<T> lifespanManager;
         private readonly ConcurrentDictionary<TKey, WeakReference> index;
@@ -38,7 +39,7 @@ namespace FluidCaching
         /// <summary>Getter for index</summary>
         /// <param name="key">key to find (or load if needed)</param>
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-        public async Task<T> GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
+        public T GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
         {
             WeakReference value;
 
@@ -109,6 +110,7 @@ namespace FluidCaching
                 {
                     AddItem(item);
                 }
+
                 return index.Count;
             }
         }
