@@ -42,10 +42,7 @@ namespace FluidCaching
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
         public T GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
         {
-            WeakReference value;
-
-            INode<T> node = (INode<T>) (index.TryGetValue(key, out value) ? value.Target : null);
-
+            INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
             lifespanManager.CheckValidity();
