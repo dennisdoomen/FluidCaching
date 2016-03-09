@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Platform.Utility;
@@ -14,7 +15,7 @@ namespace FluidCaching
         private const int LockTimeout = 30000;
         private readonly FluidCache<T> owner;
         private readonly LifespanManager<T> lifespanManager;
-        private readonly ConcurrentDictionary<TKey, WeakReference> index;
+        private ConcurrentDictionary<TKey, WeakReference> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemLoader<TKey, T> loadItem;
         
@@ -105,13 +106,14 @@ namespace FluidCaching
         {
             lock (lifespanManager)
             {
-                index.Clear();
-                foreach (INode<T> item in lifespanManager)
+                lock (lifespanManager)
                 {
-                    AddItem(item);
-                }
+                    // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
+                    var keyValues = lifespanManager.Select(item => new KeyValuePair<TKey, WeakReference>(_getKey(item.Value), new WeakReference(item)));
 
-                return index.Count;
+                    index = new ConcurrentDictionary<TKey, WeakReference>(keyValues);
+                    return index.Count;
+                }
             }
         }
     }
