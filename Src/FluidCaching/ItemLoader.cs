@@ -2,5 +2,5 @@ using System.Threading.Tasks;
 
 namespace FluidCaching
 {
-    public delegate Task<T> ItemLoader<TKey, T>(TKey key) where T : class;
+    public delegate T ItemLoader<in TKey, out T>(TKey key) where T : class;
 }

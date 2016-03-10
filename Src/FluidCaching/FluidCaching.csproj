@@ -45,10 +45,13 @@
     <Compile Include="IsValid.cs" />
     <Compile Include="ItemLoader.cs" />
     <Compile Include="LifespanManager.cs" />
-    <Compile Include="LockStatus.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RWLock.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Collections.Concurrent">
+      <HintPath>..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETPortable\v4.5\System.Collections.Concurrent.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

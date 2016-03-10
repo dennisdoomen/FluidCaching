@@ -1,22 +1,20 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Platform.Utility;
+using System.Linq;
 
 namespace FluidCaching
 {
     /// <summary>Index provides dictionary key / value access to any object in cache</summary>
     internal class Index<TKey, T> : IIndex<TKey, T>, IIndexManagement<T> where T : class
     {
-        private const int LockTimeout = 30000;
         private readonly FluidCache<T> owner;
         private readonly LifespanManager<T> lifespanManager;
-        private readonly Dictionary<TKey, WeakReference> index;
+        private ConcurrentDictionary<TKey, WeakReference<INode<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemLoader<TKey, T> loadItem;
-        private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        
 
         /// <summary>constructor</summary>
         /// <param name="owner">parent of index</param>
@@ -29,7 +27,7 @@ namespace FluidCaching
             Debug.Assert(getKey != null, "GetKey delegate required");
             this.owner = owner;
             this.lifespanManager = lifespanManager;
-            index = new Dictionary<TKey, WeakReference>(capacity * 2);
+            index = new ConcurrentDictionary<TKey, WeakReference<INode<T>>>();
             _getKey = getKey;
             this.loadItem = loadItem;
             RebuildIndex();
@@ -38,7 +36,7 @@ namespace FluidCaching
         /// <summary>Getter for index</summary>
         /// <param name="key">key to find (or load if needed)</param>
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-        public async Task<T> GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
+        public T GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
         {
             INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
@@ -49,7 +47,7 @@ namespace FluidCaching
 
             if ((node?.Value == null) && (loader != null))
             {
-                node = owner.AddAsNode(await loader(key));
+                node = owner.AddAsNode(loader(key));
             }
 
             return node?.Value;
@@ -69,11 +67,14 @@ namespace FluidCaching
 
         private INode<T> FindExistingNodeByKey(TKey key)
         {
-            return RWLock.GetReadLock(_lock, LockTimeout, delegate
+            WeakReference<INode<T>> reference;
+            INode<T> node;
+            if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
             {
-                WeakReference value;
-                return (INode<T>) (index.TryGetValue(key, out value) ? value.Target : null);
-            });
+                return node;
+            }
+
+            return null;
         }
 
         /// <summary>try to find this item in the index and return Node</summary>
@@ -85,11 +86,7 @@ namespace FluidCaching
         /// <summary>Remove all items from index</summary>
         public void ClearIndex()
         {
-            RWLock.GetWriteLock(_lock, LockTimeout, delegate
-            {
-                index.Clear();
-                return true;
-            });
+            index.Clear();
         }
 
         /// <summary>AddAsNode new item to index</summary>
@@ -98,12 +95,7 @@ namespace FluidCaching
         public bool AddItem(INode<T> item)
         {
             TKey key = _getKey(item.Value);
-            return RWLock.GetWriteLock(_lock, LockTimeout, delegate
-            {
-                bool alreadyExisted = index.ContainsKey(key);
-                index[key] = new WeakReference(item, false);
-                return alreadyExisted;
-            });
+            return !index.TryAdd(key, new WeakReference<INode<T>>(item, false));
         }
 
         /// <summary>removes all items from index and reloads each item (this gets rid of dead nodes)</summary>
@@ -111,16 +103,11 @@ namespace FluidCaching
         {
             lock (lifespanManager)
             {
-                return RWLock.GetWriteLock(_lock, LockTimeout, delegate
-                {
-                    index.Clear();
-                    foreach (INode<T> item in lifespanManager)
-                    {
-                        AddItem(item);
-                    }
+                // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
+                var keyValues = lifespanManager.Select(item => new KeyValuePair<TKey, WeakReference<INode<T>>>(_getKey(item.Value), new WeakReference<INode<T>>(item)));
 
-                    return index.Count;
-                });
+                index = new ConcurrentDictionary<TKey, WeakReference<INode<T>>>(keyValues);
+                return index.Count;
             }
         }
     }
