@@ -53,8 +53,6 @@ namespace FluidCaching
         /// <summary>checks to see if cache is still valid and if LifespanMgr needs to do maintenance</summary>
         public void CheckValidity()
         {
-            DateTime now = getNow();
-
             // Note: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
             // does not wait for a lock, if lock is currently held then skip and let next Touch perform cleanup.
             if (RequiresCleanup && Monitor.TryEnter(this))
@@ -70,6 +68,7 @@ namespace FluidCaching
                         }
                         else
                         {
+                            DateTime now = getNow();
                             CleanUp(now);
                         }
                     }
