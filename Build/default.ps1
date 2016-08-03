@@ -55,14 +55,9 @@ task ApplyPackageVersioning -depends ExtractVersionsFromGit {
 }
 
 task RestoreNugetPackages {
-    $packageConfigs = Get-ChildItem $BaseDirectory -Recurse | where{$_.Name -eq "packages.config"}
 
-    foreach($packageConfig in $packageConfigs){
-    	Write-Host "Restoring" $packageConfig.FullName 
-    	exec { 
-            . "$Nuget" install $packageConfig.FullName -OutputDirectory "$BaseDirectory\Packages" -ConfigFile "$BaseDirectory\NuGet.Config"
-        }
-    }
+	& $Nuget restore "$BaseDirectory\FluidCaching.sln"  
+	& $Nuget install "$BaseDirectory\Build\packages.config" -OutputDirectory "$BaseDirectory\Packages" -ConfigFile "$BaseDirectory\NuGet.Config"
 }
 
 task Compile {
