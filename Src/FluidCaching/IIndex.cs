@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace FluidCaching
 {
     /// <summary>
@@ -11,11 +9,11 @@ namespace FluidCaching
         /// Getter for index
         /// </summary>
         /// <param name="key">key to find (or load if needed)</param>
-        /// <param name="item">
+        /// <param name="createItem">
         /// An optional delegate that is used to create the actual object if it doesn't exist in the cache.
         /// </param>
         /// <returns>the object value associated with the cache</returns>
-        T GetItem(TKey key, ItemLoader<TKey, T> loadItem = null);
+        T GetItem(TKey key, ItemLoader<TKey, T> createItem = null);
 
         /// <summary>Delete object that matches key from cache</summary>
         /// <param name="key">key to find</param>

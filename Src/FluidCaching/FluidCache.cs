@@ -32,6 +32,8 @@ namespace FluidCaching
         private readonly LifespanManager<T> lifeSpan;
         private int actualCount;
         private int totalCount;
+        private long missCount;
+        private long hitCount;
 
         /// <summary>Constructor</summary>
         /// <param name="capacity">the normal item limit for cache (Count may exeed capacity due to minAge)</param>
@@ -62,18 +64,21 @@ namespace FluidCaching
         /// </summary>
         public int TotalCount => totalCount;
 
+        public long MissCount => missCount;
+        public long HitCount => hitCount;
+
         /// <summary>Retrieve a index by name</summary>
         public IIndex<TKey, T> GetIndex<TKey>(string indexName)
         {
             IIndexManagement<T> index;
-            return (indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null);
+            return indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null;
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
         public T Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
-            return (index == null) ? default(T) : index.GetItem(key, item);
+            return index?.GetItem(key, item);
         }
 
         /// <summary>AddAsNode a new index to the cache</summary>
@@ -84,7 +89,7 @@ namespace FluidCaching
         /// <returns>the newly created index</returns>
         public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
         {
-            var index = new Index<TKey, T>(this, Capacity, lifeSpan, getKey, item);
+            var index = new Index<TKey, T>(this, lifeSpan, getKey, item);
             indexList[indexName] = index;
             return index;
         }
@@ -175,16 +180,24 @@ namespace FluidCaching
         {
             actualCount = 0;
             totalCount = 0;
+            missCount = 0;
+            hitCount = 0;
         }
 
-        public void RegisterItem()
+        public void RegisterMiss()
         {
             Interlocked.Increment(ref actualCount);
+            Interlocked.Increment(ref missCount);
         }
 
-        public void UnregisterItem()
+        internal void UnregisterItem()
         {
             Interlocked.Decrement(ref actualCount);
+        }
+
+        internal void RegisterHit()
+        {
+            Interlocked.Increment(ref hitCount);
         }
     }
 }

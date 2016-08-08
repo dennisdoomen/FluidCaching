@@ -154,6 +154,92 @@ namespace FluidCaching.Specs
                 Result.Should().NotBeSameAs(theUser);
             }
         }
+
+        public class When_an_item_did_not_exist_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_did_not_exist_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_miss()
+            {
+                cache.MissCount.Should().Be(1);
+                cache.HitCount.Should().Be(0);
+            }
+        }
+
+        public class When_an_item_did_exist_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_did_exist_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                    indexById.GetItem("itemkey");
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_hit()
+            {
+                cache.HitCount.Should().Be(1);
+            }
+        }
+        public class When_an_item_used_to_be_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_used_to_be_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                    indexById.GetItem("itemkey");
+
+                    cache.Clear();
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_hit()
+            {
+                cache.MissCount.Should().Be(1);
+            }
+        }
+
     }
 
     public class User

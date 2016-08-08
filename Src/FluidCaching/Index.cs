@@ -6,7 +6,9 @@ using System.Linq;
 
 namespace FluidCaching
 {
-    /// <summary>Index provides dictionary key / value access to any object in cache</summary>
+    /// <summary>
+    /// Index provides dictionary key / value access to any object in the cache.
+    /// </summary>
     internal class Index<TKey, T> : IIndex<TKey, T>, IIndexManagement<T> where T : class
     {
         private readonly FluidCache<T> owner;
@@ -21,7 +23,7 @@ namespace FluidCaching
         /// <param name="lifespanManager"></param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
-        public Index(FluidCache<T> owner, int capacity, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemLoader<TKey, T> loadItem)
+        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemLoader<TKey, T> loadItem)
         {
             Debug.Assert(owner != null, "owner argument required");
             Debug.Assert(getKey != null, "GetKey delegate required");
@@ -33,17 +35,19 @@ namespace FluidCaching
             RebuildIndex();
         }
 
+        public long Count => index.Count;
+
         /// <summary>Getter for index</summary>
         /// <param name="key">key to find (or load if needed)</param>
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-        public T GetItem(TKey key, ItemLoader<TKey, T> loadItem = null)
+        public T GetItem(TKey key, ItemLoader<TKey, T> createItem = null)
         {
             INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
             lifespanManager.CheckValidity();
 
-            ItemLoader<TKey, T> loader = loadItem ?? this.loadItem;
+            ItemLoader<TKey, T> loader = createItem ?? this.loadItem;
 
             if ((node?.Value == null) && (loader != null))
             {
@@ -63,7 +67,11 @@ namespace FluidCaching
             lifespanManager.CheckValidity();
         }
 
-        public long Count => index.Count;
+        /// <summary>try to find this item in the index and return Node</summary>
+        public INode<T> FindItem(T item)
+        {
+            return FindExistingNodeByKey(_getKey(item));
+        }
 
         private INode<T> FindExistingNodeByKey(TKey key)
         {
@@ -71,16 +79,11 @@ namespace FluidCaching
             INode<T> node;
             if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
             {
+                owner.RegisterHit();
                 return node;
             }
 
             return null;
-        }
-
-        /// <summary>try to find this item in the index and return Node</summary>
-        public INode<T> FindItem(T item)
-        {
-            return FindExistingNodeByKey(_getKey(item));
         }
 
         /// <summary>Remove all items from index</summary>

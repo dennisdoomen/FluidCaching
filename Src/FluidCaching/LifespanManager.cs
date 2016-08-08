@@ -68,8 +68,7 @@ namespace FluidCaching
                         }
                         else
                         {
-                            DateTime now = getNow();
-                            CleanUp(now);
+                            CleanUp(getNow());
                         }
                     }
                 }
@@ -232,7 +231,7 @@ namespace FluidCaching
                 Node<T> next = currentBag.First;
                 currentBag.First = node;
 
-                owner.RegisterItem();
+                owner.RegisterMiss();
 
                 return next;
             }
