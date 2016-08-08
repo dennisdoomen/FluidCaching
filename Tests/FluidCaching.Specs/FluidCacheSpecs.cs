@@ -11,8 +11,6 @@ namespace FluidCaching.Specs
     {
         // TODO: When an object's maximum age is exceeded, it should be removed after a while
         // TODO: When objects are added, it should automatically clean-up
-        // TODO: When new objects added rapidly through a get, it should register the cache misses per minute
-        // TODO: When existing objects are returned through a get, it should register the cache hits per minute
         // TODO: When concurrently adding and removing items, it should end up being in a consistent state
 
         public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
@@ -42,8 +40,8 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_the_total_number_of_items_should_match()
             {
-                cache.TotalCount.Should().Be(1000);
-                cache.ActualCount.Should().BeLessThan(1000);
+                cache.Statistics.SinceCreation.Should().Be(1000);
+                cache.Statistics.Current.Should().BeLessThan(1000);
             }
         }
 
@@ -178,8 +176,8 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_it_should_be_registered_as_a_cache_miss()
             {
-                cache.MissCount.Should().Be(1);
-                cache.HitCount.Should().Be(0);
+                cache.Statistics.Misses.Should().Be(1);
+                cache.Statistics.Hits.Should().Be(0);
             }
         }
 
@@ -207,9 +205,10 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_it_should_be_registered_as_a_cache_hit()
             {
-                cache.HitCount.Should().Be(1);
+                cache.Statistics.Hits.Should().Be(1);
             }
         }
+
         public class When_an_item_used_to_be_in_the_cache : GivenWhenThen
         {
             private IIndex<string, User> indexById;
@@ -236,7 +235,7 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_it_should_be_registered_as_a_cache_hit()
             {
-                cache.MissCount.Should().Be(1);
+                cache.Statistics.Misses.Should().Be(1);
             }
         }
 

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FluidCaching
 {
@@ -30,10 +28,6 @@ namespace FluidCaching
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
-        private int actualCount;
-        private int totalCount;
-        private long missCount;
-        private long hitCount;
 
         /// <summary>Constructor</summary>
         /// <param name="capacity">the normal item limit for cache (Count may exeed capacity due to minAge)</param>
@@ -43,29 +37,18 @@ namespace FluidCaching
         /// <param name="validateCache">
         /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once per 10 seconds
         /// </param>
-        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache= null)
+        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache = null)
         {
-            Capacity = capacity;
-            lifeSpan = new LifespanManager<T>(this, minAge, maxAge, getNow)
+            lifeSpan = new LifespanManager<T>(this, capacity, minAge, maxAge, getNow)
             {
                 ValidateCache = validateCache
             };
         }
 
-        public int Capacity { get; }
-
         /// <summary>
-        /// Number of items currently un the cache. 
+        /// Gets a collection of statistics for the current cache instance.
         /// </summary>
-        public int ActualCount => actualCount;
-
-        /// <summary>
-        /// Number of items added to the cache since it was created.
-        /// </summary>
-        public int TotalCount => totalCount;
-
-        public long MissCount => missCount;
-        public long HitCount => hitCount;
+        public CacheStats Statistics => lifeSpan.Statistics;
 
         /// <summary>Retrieve a index by name</summary>
         public IIndex<TKey, T> GetIndex<TKey>(string indexName)
@@ -131,7 +114,7 @@ namespace FluidCaching
 
             if (!isDuplicate)
             {
-                Interlocked.Increment(ref totalCount);
+                lifeSpan.Statistics.RegisterItem();
             }
 
             return node;
@@ -165,39 +148,13 @@ namespace FluidCaching
         internal void CheckIndexValid()
         {
             // if indexes are getting too big its time to rebuild them
-            if ((totalCount - actualCount) > Capacity)
+            if (Statistics.RequiresRebuild)
             {
                 foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
                 {
-                    actualCount = keyValue.Value.RebuildIndex();
+                    Statistics.MarkAsRebuild(keyValue.Value.RebuildIndex());
                 }
-
-                totalCount = actualCount;
             }
-        }
-
-        public void ResetCounters()
-        {
-            actualCount = 0;
-            totalCount = 0;
-            missCount = 0;
-            hitCount = 0;
-        }
-
-        public void RegisterMiss()
-        {
-            Interlocked.Increment(ref actualCount);
-            Interlocked.Increment(ref missCount);
-        }
-
-        internal void UnregisterItem()
-        {
-            Interlocked.Decrement(ref actualCount);
-        }
-
-        internal void RegisterHit()
-        {
-            Interlocked.Increment(ref hitCount);
         }
     }
 }

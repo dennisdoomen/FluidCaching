@@ -79,7 +79,7 @@ namespace FluidCaching
             INode<T> node;
             if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
             {
-                owner.RegisterHit();
+                lifespanManager.Statistics.RegisterHit();
                 return node;
             }
 
