@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace FluidCaching
 {
     /// <summary>
@@ -13,7 +15,7 @@ namespace FluidCaching
         /// An optional delegate that is used to create the actual object if it doesn't exist in the cache.
         /// </param>
         /// <returns>the object value associated with the cache</returns>
-        T GetItem(TKey key, ItemLoader<TKey, T> createItem = null);
+        Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null);
 
         /// <summary>Delete object that matches key from cache</summary>
         /// <param name="key">key to find</param>
