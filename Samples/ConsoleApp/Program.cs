@@ -25,8 +25,7 @@ namespace ConsoleApp
             //-----------------------------------------------------------------------------------------------------------
             // Assert
             //-----------------------------------------------------------------------------------------------------------
-            Console.WriteLine($"ActualCount {cache.ActualCount}");
-            Console.WriteLine($"TotalCount {cache.TotalCount}");
+            Console.WriteLine(cache.Statistics);
         }
     }
 }

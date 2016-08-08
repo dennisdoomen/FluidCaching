@@ -11,8 +11,6 @@ namespace FluidCaching.Specs
     {
         // TODO: When an object's maximum age is exceeded, it should be removed after a while
         // TODO: When objects are added, it should automatically clean-up
-        // TODO: When new objects added rapidly through a get, it should register the cache misses per minute
-        // TODO: When existing objects are returned through a get, it should register the cache hits per minute
         // TODO: When concurrently adding and removing items, it should end up being in a consistent state
 
         public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
@@ -42,8 +40,8 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_the_total_number_of_items_should_match()
             {
-                cache.TotalCount.Should().Be(1000);
-                cache.ActualCount.Should().BeLessThan(1000);
+                cache.Statistics.SinceCreation.Should().Be(1000);
+                cache.Statistics.Current.Should().BeLessThan(1000);
             }
         }
 
@@ -154,6 +152,93 @@ namespace FluidCaching.Specs
                 Result.Should().NotBeSameAs(theUser);
             }
         }
+
+        public class When_an_item_did_not_exist_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_did_not_exist_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_miss()
+            {
+                cache.Statistics.Misses.Should().Be(1);
+                cache.Statistics.Hits.Should().Be(0);
+            }
+        }
+
+        public class When_an_item_did_exist_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_did_exist_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                    indexById.GetItem("itemkey");
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_hit()
+            {
+                cache.Statistics.Hits.Should().Be(1);
+            }
+        }
+
+        public class When_an_item_used_to_be_in_the_cache : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_used_to_be_in_the_cache()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                    indexById.GetItem("itemkey");
+
+                    cache.Clear();
+                });
+
+
+                When(() =>
+                {
+                    indexById.GetItem("itemkey");
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_be_registered_as_a_cache_hit()
+            {
+                cache.Statistics.Misses.Should().Be(1);
+            }
+        }
+
     }
 
     public class User

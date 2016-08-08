@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FluidCaching
 {
@@ -30,8 +28,6 @@ namespace FluidCaching
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
-        private int actualCount;
-        private int totalCount;
 
         /// <summary>Constructor</summary>
         /// <param name="capacity">the normal item limit for cache (Count may exeed capacity due to minAge)</param>
@@ -41,39 +37,31 @@ namespace FluidCaching
         /// <param name="validateCache">
         /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once per 10 seconds
         /// </param>
-        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache= null)
+        public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid validateCache = null)
         {
-            Capacity = capacity;
-            lifeSpan = new LifespanManager<T>(this, minAge, maxAge, getNow)
+            lifeSpan = new LifespanManager<T>(this, capacity, minAge, maxAge, getNow)
             {
                 ValidateCache = validateCache
             };
         }
 
-        public int Capacity { get; }
-
         /// <summary>
-        /// Number of items currently un the cache. 
+        /// Gets a collection of statistics for the current cache instance.
         /// </summary>
-        public int ActualCount => actualCount;
-
-        /// <summary>
-        /// Number of items added to the cache since it was created.
-        /// </summary>
-        public int TotalCount => totalCount;
+        public CacheStats Statistics => lifeSpan.Statistics;
 
         /// <summary>Retrieve a index by name</summary>
         public IIndex<TKey, T> GetIndex<TKey>(string indexName)
         {
             IIndexManagement<T> index;
-            return (indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null);
+            return indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null;
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
         public T Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
-            return (index == null) ? default(T) : index.GetItem(key, item);
+            return index?.GetItem(key, item);
         }
 
         /// <summary>AddAsNode a new index to the cache</summary>
@@ -84,7 +72,7 @@ namespace FluidCaching
         /// <returns>the newly created index</returns>
         public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
         {
-            var index = new Index<TKey, T>(this, Capacity, lifeSpan, getKey, item);
+            var index = new Index<TKey, T>(this, lifeSpan, getKey, item);
             indexList[indexName] = index;
             return index;
         }
@@ -126,7 +114,7 @@ namespace FluidCaching
 
             if (!isDuplicate)
             {
-                Interlocked.Increment(ref totalCount);
+                lifeSpan.Statistics.RegisterItem();
             }
 
             return node;
@@ -160,31 +148,13 @@ namespace FluidCaching
         internal void CheckIndexValid()
         {
             // if indexes are getting too big its time to rebuild them
-            if ((totalCount - actualCount) > Capacity)
+            if (Statistics.RequiresRebuild)
             {
                 foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
                 {
-                    actualCount = keyValue.Value.RebuildIndex();
+                    Statistics.MarkAsRebuild(keyValue.Value.RebuildIndex());
                 }
-
-                totalCount = actualCount;
             }
-        }
-
-        public void ResetCounters()
-        {
-            actualCount = 0;
-            totalCount = 0;
-        }
-
-        public void RegisterItem()
-        {
-            Interlocked.Increment(ref actualCount);
-        }
-
-        public void UnregisterItem()
-        {
-            Interlocked.Decrement(ref actualCount);
         }
     }
 }
