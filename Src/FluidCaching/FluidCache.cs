@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FluidCaching
 {
@@ -58,19 +59,19 @@ namespace FluidCaching
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
-        public T Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
+        public Task<T> Get<TKey>(string indexName, TKey key, ItemCreator<TKey, T> item = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
             return index?.GetItem(key, item);
         }
 
-        /// <summary>AddAsNode a new index to the cache</summary>
+            /// <summary>AddAsNode a new index to the cache</summary>
         /// <typeparam name="TKey">the type of the key value</typeparam>
         /// <param name="indexName">the name to be associated with this list</param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="item">delegate to load object if it is not found in index</param>
         /// <returns>the newly created index</returns>
-        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
+        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemCreator<TKey, T> item = null)
         {
             var index = new Index<TKey, T>(this, lifeSpan, getKey, item);
             indexList[indexName] = index;

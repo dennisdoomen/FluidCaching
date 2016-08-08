@@ -45,7 +45,7 @@
     <Compile Include="Index.cs" />
     <Compile Include="INode.cs" />
     <Compile Include="IsValid.cs" />
-    <Compile Include="ItemLoader.cs" />
+    <Compile Include="ItemCreator.cs" />
     <Compile Include="LifespanManager.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

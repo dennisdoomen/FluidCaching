@@ -22,7 +22,7 @@ namespace FluidCaching.Specs
             {
                 Given(() =>
                 {
-                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
                     indexById = cache.AddIndex("index", user => user.Id);
                 });
 
@@ -32,7 +32,7 @@ namespace FluidCaching.Specs
                     foreach (int key in Enumerable.Range(0, 1000))
                     {
                         await Task.Delay(10);
-                        indexById.GetItem(key.ToString(), id => new User {Id = id});
+                        await indexById.GetItem(key.ToString(), id => Task.FromResult(new User {Id = id}));
                     }
                 });
             }
@@ -59,35 +59,35 @@ namespace FluidCaching.Specs
                 {
                     now = 25.December(2015).At(10, 22);
 
-                    var cache = new FluidCache<User>(capacity, minimumAge, TimeSpan.FromHours(1), () => now, null);
+                    var cache = new FluidCache<User>(capacity, minimumAge, TimeSpan.FromHours(1), () => now);
 
-                    index = cache.AddIndex("UsersById", u => u.Id, key => new User
+                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
                     {
                         Id = key,
                         Name = "key"
-                    });
+                    }));
                 });
 
-                When(() =>
+                When(async () =>
                 {
-                    theUser = index.GetItem("the user");
+                    theUser = await index.GetItem("the user");
 
                     for (int id = 0; id < capacity; id++)
                     {
-                        index.GetItem("user " + id);
+                        await index.GetItem("user " + id);
                     }
 
                     // Forward time
                     now = now.Add(minimumAge - 1.Minutes());
 
                     // Trigger evaluating of the cache
-                    index.GetItem("some user");
+                    await index.GetItem("some user");
 
                     // Make sure any weak references are cleaned up
                     GC.Collect();
 
                     // Try to get the same user again.
-                    return index.GetItem("the user");
+                    return await index.GetItem("the user");
                 });
             }
 
@@ -117,32 +117,32 @@ namespace FluidCaching.Specs
 
                     cache = new FluidCache<User>(capacity, minimumAge, 1.Hours(), () => now);
 
-                    index = cache.AddIndex("UsersById", u => u.Id, key => new User
+                    index = cache.AddIndex("UsersById", u => u.Id, key => Task.FromResult(new User
                     {
                         Id = key,
                         Name = "key"
-                    });
+                    }));
                 });
 
-                When(() =>
+                When(async () =>
                 {
-                    theUser = index.GetItem("the user");
+                    theUser = await index.GetItem("the user");
 
                     for (int id = 0; id < capacity; id++)
                     {
-                        index.GetItem("user " + id);
+                        await index.GetItem("user " + id);
                     }
 
                     now = now.Add(minimumAge + 1.Minutes());
 
                     // Trigger evaluating of the cache
-                    index.GetItem("some user");
+                    await index.GetItem("some user");
 
                     // Make sure any weak references are cleaned up
                     GC.Collect();
 
                     // Try to get the same user again.
-                    return index.GetItem("the user");
+                    return await index.GetItem("the user");
                 });
             }
 
@@ -162,14 +162,14 @@ namespace FluidCaching.Specs
             {
                 Given(() =>
                 {
-                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
-                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
                 });
 
 
-                When(() =>
+                When(async () =>
                 {
-                    indexById.GetItem("itemkey");
+                    await indexById.GetItem("itemkey");
                 });
             }
 
@@ -188,17 +188,17 @@ namespace FluidCaching.Specs
 
             public When_an_item_did_exist_in_the_cache()
             {
-                Given(() =>
+                Given(async () =>
                 {
-                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
-                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
-                    indexById.GetItem("itemkey");
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                    await indexById.GetItem("itemkey");
                 });
 
 
-                When(() =>
+                When(async () =>
                 {
-                    indexById.GetItem("itemkey");
+                    await indexById.GetItem("itemkey");
                 });
             }
 
@@ -216,19 +216,19 @@ namespace FluidCaching.Specs
 
             public When_an_item_used_to_be_in_the_cache()
             {
-                Given(() =>
+                Given(async () =>
                 {
-                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now, null);
-                    indexById = cache.AddIndex("index", user => user.Id, id => new User { Id = id });
-                    indexById.GetItem("itemkey");
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                    await indexById.GetItem("itemkey");
 
                     cache.Clear();
                 });
 
 
-                When(() =>
+                When(async () =>
                 {
-                    indexById.GetItem("itemkey");
+                    await indexById.GetItem("itemkey");
                 });
             }
 

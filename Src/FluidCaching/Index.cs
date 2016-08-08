@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace FluidCaching
 {
@@ -15,7 +16,7 @@ namespace FluidCaching
         private readonly LifespanManager<T> lifespanManager;
         private ConcurrentDictionary<TKey, WeakReference<INode<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
-        private readonly ItemLoader<TKey, T> loadItem;
+        private readonly ItemCreator<TKey, T> loadItem;
         
 
         /// <summary>constructor</summary>
@@ -23,7 +24,7 @@ namespace FluidCaching
         /// <param name="lifespanManager"></param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
-        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemLoader<TKey, T> loadItem)
+        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemCreator<TKey, T> loadItem)
         {
             Debug.Assert(owner != null, "owner argument required");
             Debug.Assert(getKey != null, "GetKey delegate required");
@@ -40,18 +41,18 @@ namespace FluidCaching
         /// <summary>Getter for index</summary>
         /// <param name="key">key to find (or load if needed)</param>
         /// <returns>the object value associated with key, or null if not found & could not be loaded</returns>
-        public T GetItem(TKey key, ItemLoader<TKey, T> createItem = null)
+        public async Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null)
         {
             INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
             lifespanManager.CheckValidity();
 
-            ItemLoader<TKey, T> loader = createItem ?? this.loadItem;
+            ItemCreator<TKey, T> creator = createItem ?? this.loadItem;
 
-            if ((node?.Value == null) && (loader != null))
+            if ((node?.Value == null) && (creator != null))
             {
-                node = owner.AddAsNode(loader(key));
+                node = owner.AddAsNode(await creator(key));
             }
 
             return node?.Value;
