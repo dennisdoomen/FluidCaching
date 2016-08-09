@@ -188,11 +188,15 @@ namespace FluidCaching.Specs
 
             public When_an_item_did_exist_in_the_cache()
             {
-                Given(async () =>
+                Given(() =>
                 {
                     cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
                     indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
-                    await indexById.GetItem("itemkey");
+
+                    cache.Add(new User
+                    {
+                        Id = "itemkey"
+                    });
                 });
 
 

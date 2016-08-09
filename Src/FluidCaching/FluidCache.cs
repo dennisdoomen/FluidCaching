@@ -83,7 +83,7 @@ namespace FluidCaching
         /// </summary>
         public void Add(T item)
         {
-            Add(item);
+            AddAsNode(item);
         }
 
         /// <summary>
