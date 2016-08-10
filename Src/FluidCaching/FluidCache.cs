@@ -25,7 +25,13 @@ namespace FluidCaching
     /// !!!!! THERE ARE 2 DIFFERENT LOCKS USED BY CACHE - so care is required when altering code or you may introduce deadlocks !!!!!
     ///        order of lock nesting is LifespanMgr (Monitor) / Index (ReaderWriterLock)
     /// </remarks>
-    public class FluidCache<T> where T : class
+#if PUBLIC_FLUID_CACHING
+    public
+#else
+    internal
+#endif
+
+        class FluidCache<T> where T : class
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
