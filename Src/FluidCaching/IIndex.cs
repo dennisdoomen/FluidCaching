@@ -20,7 +20,5 @@ namespace FluidCaching
         /// <summary>Delete object that matches key from cache</summary>
         /// <param name="key">key to find</param>
         void Remove(TKey key);
-
-        long Count { get; }
     }
 }

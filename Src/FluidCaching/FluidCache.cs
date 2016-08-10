@@ -35,6 +35,7 @@ namespace FluidCaching
         /// <param name="minAge">the minimium time after an access before an item becomes eligible for removal, during this time
         /// the item is protected and will not be removed from cache even if over capacity</param>
         /// <param name="maxAge">the max time that an object will sit in the cache without being accessed, before being removed</param>
+        /// <param name="getNow">A delegate to get the current time.</param>
         /// <param name="validateCache">
         /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once per 10 seconds
         /// </param>
