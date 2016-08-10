@@ -6,5 +6,11 @@ namespace FluidCaching
     /// Represents a delegate to get the current time in a unit test-friendly way.
     /// </summary>
     /// <returns></returns>
-    public delegate DateTime GetNow();
+#if PUBLIC_FLUID_CACHING
+    public
+#else
+    internal
+#endif
+
+        delegate DateTime GetNow();
 }

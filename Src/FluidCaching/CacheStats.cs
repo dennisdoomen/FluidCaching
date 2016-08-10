@@ -5,7 +5,12 @@ namespace FluidCaching
     /// <summary>
     /// Provides statistics about the cache.
     /// </summary>
-    public class CacheStats
+#if PUBLIC_FLUID_CACHING
+    public
+#else
+    internal
+#endif
+    class CacheStats
     {
         private int current;
         private int totalCount;
