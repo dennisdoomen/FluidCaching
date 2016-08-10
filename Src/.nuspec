@@ -3,14 +3,15 @@
   <metadata>
     <id>FluidCaching.Sources</id>
     <title>FluidCaching</title>
-    <version>0.1.0-fixcompile0001</version>
+    <version>0.1.0-mergefiles0001</version>
     <owners>Dennis Doomen</owners>
     <authors>Dennis Doomen</authors>
     <summary>
-      TBD
+      A multi-threaded high performance Least Recently Used cache with async/await support, compiled for .NET Standard 1.1 and shipped as source-only NuGet package.
     </summary>
     <description>
-      TBD
+      A multi-threaded high performance Least Recently Used cache with async/await support, compiled for .NET Standard 1.1 and shipped as source-only NuGet package.
+	  Read http://www.continuousimprover.com/2016/02/a-least-recently-used-cache-that-you.html for some background information.
     </description>
     <language>en-US</language>
     <licenseUrl>https://github.com/dennisdoomen/FluidCaching</licenseUrl>
@@ -18,10 +19,10 @@
     <tags>LRU Caching</tags>
     <copyright>Copyright Dennis Doomen 2015-2016</copyright>
     <releaseNotes>
-      TBD
+      See https://github.com/dennisdoomen/FluidCaching/releases
     </releaseNotes>
   </metadata>
   <files>
-    <file src="..\Src\FluidCaching\*.cs" target="content/App_Packages/FluidCaching.Sources" />
+    <file src="..\Artifacts\FluidCaching.cs" target="content/App_Packages/FluidCaching.Sources" />
   </files>
 </package>

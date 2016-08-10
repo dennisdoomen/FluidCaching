@@ -67,16 +67,6 @@ task Compile {
     }
 }
 
-task BuildPackage {
-    TeamCity-Block "Building NuGet Package" {  
-		if (!(Test-Path "$ArtifactsDirectory\")) {
-			New-Item $ArtifactsDirectory -ItemType Directory
-		}
-	
-		& $Nuget pack "$SrcDirectory\.nuspec" -o "$ArtifactsDirectory\" 
-	}
-}
-
 task RunTests -depends Compile -Description "Running all unit tests." {
     $xunitRunner = "$BaseDirectory\Packages\xunit.runner.console.2.0.0\tools\xunit.console.exe"
 	
@@ -86,7 +76,19 @@ task RunTests -depends Compile -Description "Running all unit tests." {
 
 	exec { . $xunitRunner "$BaseDirectory\Tests\FluidCaching.Specs\bin\Release\FluidCaching.Specs.dll" -html "$ArtifactsDirectory\$project.html"  }
 }
+
+    
+task BuildPackage {
+    TeamCity-Block "Building NuGet Package" {  
+		if (!(Test-Path "$ArtifactsDirectory\")) {
+			New-Item $ArtifactsDirectory -ItemType Directory
+		}
+        
+        & "$ArtifactsDirectory\MergeCSharpFiles.exe" "$SrcDirectory\FluidCaching" *.cs "$ArtifactsDirectory\FluidCaching.cs"
 	
+		& $Nuget pack "$SrcDirectory\.nuspec" -o "$ArtifactsDirectory\" 
+	}
+}
 
 task PublishToMyget -precondition { return $NuGetPushSource -and $env:NuGetApiKey } {
     TeamCity-Block "Publishing NuGet Package to Myget" {  
