@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FluidCaching
 {
@@ -24,7 +25,13 @@ namespace FluidCaching
     /// !!!!! THERE ARE 2 DIFFERENT LOCKS USED BY CACHE - so care is required when altering code or you may introduce deadlocks !!!!!
     ///        order of lock nesting is LifespanMgr (Monitor) / Index (ReaderWriterLock)
     /// </remarks>
-    public class FluidCache<T> where T : class
+#if PUBLIC_FLUID_CACHING
+    public
+#else
+    internal
+#endif
+
+        class FluidCache<T> where T : class
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
@@ -34,6 +41,7 @@ namespace FluidCaching
         /// <param name="minAge">the minimium time after an access before an item becomes eligible for removal, during this time
         /// the item is protected and will not be removed from cache even if over capacity</param>
         /// <param name="maxAge">the max time that an object will sit in the cache without being accessed, before being removed</param>
+        /// <param name="getNow">A delegate to get the current time.</param>
         /// <param name="validateCache">
         /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once per 10 seconds
         /// </param>
@@ -58,19 +66,19 @@ namespace FluidCaching
         }
 
         /// <summary>Retrieve a object by index name / key</summary>
-        public T Get<TKey>(string indexName, TKey key, ItemLoader<TKey, T> item = null)
+        public Task<T> Get<TKey>(string indexName, TKey key, ItemCreator<TKey, T> item = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
             return index?.GetItem(key, item);
         }
 
-        /// <summary>AddAsNode a new index to the cache</summary>
+            /// <summary>AddAsNode a new index to the cache</summary>
         /// <typeparam name="TKey">the type of the key value</typeparam>
         /// <param name="indexName">the name to be associated with this list</param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="item">delegate to load object if it is not found in index</param>
         /// <returns>the newly created index</returns>
-        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemLoader<TKey, T> item = null)
+        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemCreator<TKey, T> item = null)
         {
             var index = new Index<TKey, T>(this, lifeSpan, getKey, item);
             indexList[indexName] = index;
@@ -82,7 +90,7 @@ namespace FluidCaching
         /// </summary>
         public void Add(T item)
         {
-            Add(item);
+            AddAsNode(item);
         }
 
         /// <summary>

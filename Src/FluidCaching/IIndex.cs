@@ -1,9 +1,16 @@
+using System.Threading.Tasks;
+
 namespace FluidCaching
 {
     /// <summary>
     /// The public wrapper for a Index
     /// </summary>
-    public interface IIndex<TKey, T> where T : class
+#if PUBLIC_FLUID_CACHING
+    public
+#else
+    internal
+#endif
+        interface IIndex<TKey, T> where T : class
     {
         /// <summary>
         /// Getter for index
@@ -13,12 +20,10 @@ namespace FluidCaching
         /// An optional delegate that is used to create the actual object if it doesn't exist in the cache.
         /// </param>
         /// <returns>the object value associated with the cache</returns>
-        T GetItem(TKey key, ItemLoader<TKey, T> createItem = null);
+        Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null);
 
         /// <summary>Delete object that matches key from cache</summary>
         /// <param name="key">key to find</param>
         void Remove(TKey key);
-
-        long Count { get; }
     }
 }

@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25029.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching", "Src\FluidCaching\FluidCaching.csproj", "{AECB5991-BDC6-4020-99E1-72631C545D75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching.Specs", "Tests\FluidCaching.Specs\FluidCaching.Specs.csproj", "{61AC252D-B354-40E4-A9DA-78AB6CAFC162}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "Samples\ConsoleApp\ConsoleApp.csproj", "{6361D139-DC35-466A-860D-4FAD0C1D3105}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergeCSharpFiles", "Src\MergeCSharpFiles\MergeCSharpFiles.csproj", "{3220F580-0239-4D63-B17C-5143F9BB1EB4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{61AC252D-B354-40E4-A9DA-78AB6CAFC162}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61AC252D-B354-40E4-A9DA-78AB6CAFC162}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61AC252D-B354-40E4-A9DA-78AB6CAFC162}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6361D139-DC35-466A-860D-4FAD0C1D3105}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6361D139-DC35-466A-860D-4FAD0C1D3105}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6361D139-DC35-466A-860D-4FAD0C1D3105}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6361D139-DC35-466A-860D-4FAD0C1D3105}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
