@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
+using System.Threading;
 using System.Threading.Tasks;
 using Chill;
 using FluentAssertions;
@@ -42,6 +44,41 @@ namespace FluidCaching.Specs
             {
                 cache.Statistics.SinceCreation.Should().Be(1000);
                 cache.Statistics.Current.Should().BeLessThan(1000);
+            }
+        }
+
+        public class When_adding_the_same_item_concurrently : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_adding_the_same_item_concurrently()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id);
+                });
+
+
+                When(() =>
+                {
+                    Parallel.For(1, 100000, _ =>
+                    {
+                        indexById.GetItem("Item1", id => Task.FromResult(new User
+                        {
+                            Id = id,
+                            Name = "Item1"
+                        })).Wait();
+                    });
+                });
+            }
+
+            [Fact]
+            public void Then_the_total_number_of_items_should_match()
+            {
+                cache.Statistics.Current.Should().Be(1);
+                cache.Statistics.Misses.Should().Be(1);
             }
         }
 

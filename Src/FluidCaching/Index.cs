@@ -50,10 +50,19 @@ namespace FluidCaching
             lifespanManager.CheckValidity();
 
             ItemCreator<TKey, T> creator = createItem ?? this.loadItem;
-
             if ((node?.Value == null) && (creator != null))
             {
-                node = owner.AddAsNode(await creator(key));
+                T value = await creator(key);
+
+                lock (this)
+                {
+                    node = FindExistingNodeByKey(key);
+                    if (node?.Value == null)
+                    {
+                        node = owner.AddAsNode(value);
+                    }
+                }
+
             }
 
             return node?.Value;
@@ -91,7 +100,10 @@ namespace FluidCaching
         /// <summary>Remove all items from index</summary>
         public void ClearIndex()
         {
-            index.Clear();
+            lock (this)
+            {
+                index.Clear();
+            }
         }
 
         /// <summary>AddAsNode new item to index</summary>
@@ -99,17 +111,22 @@ namespace FluidCaching
         /// <returns>was item key previously contained in index</returns>
         public bool AddItem(INode<T> item)
         {
-            TKey key = _getKey(item.Value);
-            return !index.TryAdd(key, new WeakReference<INode<T>>(item, false));
+            lock (this)
+            {
+                TKey key = _getKey(item.Value);
+                return !index.TryAdd(key, new WeakReference<INode<T>>(item, false));
+            }
         }
 
         /// <summary>removes all items from index and reloads each item (this gets rid of dead nodes)</summary>
         public int RebuildIndex()
         {
-            lock (lifespanManager)
+            lock (this)
             {
                 // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
-                var keyValues = lifespanManager.Select(item => new KeyValuePair<TKey, WeakReference<INode<T>>>(_getKey(item.Value), new WeakReference<INode<T>>(item)));
+                var keyValues = lifespanManager
+                    .Select(item => new KeyValuePair<TKey, WeakReference<INode<T>>>(_getKey(item.Value), new WeakReference<INode<T>>(item)))
+                    .ToArray();
 
                 index = new ConcurrentDictionary<TKey, WeakReference<INode<T>>>(keyValues);
                 return index.Count;
