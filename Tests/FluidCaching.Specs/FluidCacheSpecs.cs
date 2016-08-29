@@ -11,7 +11,7 @@ namespace FluidCaching.Specs
     {
         // TODO: When an object's maximum age is exceeded, it should be removed after a while
         // TODO: When objects are added, it should automatically clean-up
-        // TODO: When concurrently adding and removing items, it should end up being in a consistent state
+        // TODO: When removing an item manualy while it is being cleaned up automatiicaly, it should report a consistent count
 
         public class When_requesting_a_large_number_of_items_from_the_cache : GivenWhenThen
         {
@@ -25,7 +25,6 @@ namespace FluidCaching.Specs
                     cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
                     indexById = cache.AddIndex("index", user => user.Id);
                 });
-
 
                 When(async () =>
                 {
@@ -45,13 +44,47 @@ namespace FluidCaching.Specs
             }
         }
 
+        public class When_adding_the_same_item_concurrently : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_adding_the_same_item_concurrently()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id);
+                });
+
+                When(() =>
+                {
+                    Parallel.For(1, 100000, _ =>
+                    {
+                        indexById.GetItem("Item1", id => Task.FromResult(new User
+                        {
+                            Id = id,
+                            Name = "Item1"
+                        })).Wait();
+                    });
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_still_only_have_a_single_item()
+            {
+                cache.Statistics.Current.Should().Be(1);
+                cache.Statistics.Misses.Should().Be(1);
+            }
+        }
+
         public class When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached : GivenWhenThen<User>
         {
             private DateTime now;
             private IIndex<string, User> index;
             private User theUser;
             private readonly TimeSpan minimumAge = 5.Minutes();
-            private int capacity = 20;
+            private readonly int capacity = 20;
 
             public When_capacity_is_at_max_but_an_objects_minimal_age_has_not_been_reached()
             {
@@ -163,14 +196,10 @@ namespace FluidCaching.Specs
                 Given(() =>
                 {
                     cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
-                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User {Id = id}));
                 });
 
-
-                When(async () =>
-                {
-                    await indexById.GetItem("itemkey");
-                });
+                When(async () => { await indexById.GetItem("itemkey"); });
             }
 
             [Fact]
@@ -191,7 +220,7 @@ namespace FluidCaching.Specs
                 Given(() =>
                 {
                     cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
-                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User {Id = id}));
 
                     cache.Add(new User
                     {
@@ -199,11 +228,7 @@ namespace FluidCaching.Specs
                     });
                 });
 
-
-                When(async () =>
-                {
-                    await indexById.GetItem("itemkey");
-                });
+                When(async () => { await indexById.GetItem("itemkey"); });
             }
 
             [Fact]
@@ -223,17 +248,13 @@ namespace FluidCaching.Specs
                 Given(async () =>
                 {
                     cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
-                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User {Id = id}));
                     await indexById.GetItem("itemkey");
 
                     cache.Clear();
                 });
 
-
-                When(async () =>
-                {
-                    await indexById.GetItem("itemkey");
-                });
+                When(async () => { await indexById.GetItem("itemkey"); });
             }
 
             [Fact]
@@ -242,7 +263,6 @@ namespace FluidCaching.Specs
                 cache.Statistics.Misses.Should().Be(1);
             }
         }
-
     }
 
     public class User

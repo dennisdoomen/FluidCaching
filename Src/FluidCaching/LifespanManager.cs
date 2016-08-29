@@ -114,8 +114,7 @@ namespace FluidCaching
                             {
                                 // item has not been touched since bag was closed, so remove it from LifespanMgr
                                 ++itemsToRemove;
-                                node.Bag = null;
-                                Statistics.UnregisterItem();
+                                node.Remove();
                             }
                             else
                             {
