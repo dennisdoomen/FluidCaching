@@ -60,11 +60,17 @@ namespace FluidCaching
         {
             if ((Bag != null) && (Value != null))
             {
-                manager.UnregisterFromLifespanManager();
-            }
+                lock (this)
+                {
+                    if ((Bag != null) && (Value != null))
+                    {
+                        manager.UnregisterFromLifespanManager();
 
-            Value = null;
-            Bag = null;
+                        Value = null;
+                        Bag = null;
+                    }
+                }
+            }
         }
     }
 }
