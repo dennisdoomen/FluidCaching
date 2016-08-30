@@ -22,7 +22,7 @@ namespace FluidCaching
 
         public Node<T> Next { get; set; }
 
-        public AgeBag<T> Bag { get; set; }
+        public AgeBag<T> Bag { get; private set; }
 
         /// <summary>
         /// Updates the status of the node to prevent it from being dropped from cache
@@ -68,6 +68,7 @@ namespace FluidCaching
 
                         Value = null;
                         Bag = null;
+                        Next = null;
                     }
                 }
             }

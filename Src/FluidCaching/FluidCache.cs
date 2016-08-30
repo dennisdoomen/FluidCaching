@@ -109,20 +109,14 @@ namespace FluidCaching
             bool isDuplicate = (node != null) && (node.Value == item);
             if (!isDuplicate)
             {
+                // SMELL: What if another thread just added the same item before this statement?
                 node = lifeSpan.Add(item);
+                lifeSpan.Statistics.RegisterItem();
             }
 
             foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
             {
-                if (keyValue.Value.AddItem(node))
-                {
-                    isDuplicate = true;
-                }
-            }
-
-            if (!isDuplicate)
-            {
-                lifeSpan.Statistics.RegisterItem();
+                keyValue.Value.AddItem(node);
             }
 
             return node;

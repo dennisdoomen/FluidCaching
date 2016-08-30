@@ -160,8 +160,7 @@ namespace FluidCaching
                     while (node != null)
                     {
                         Node<T> next = node.Next;
-                        node.Next = null;
-                        node.Bag = null;
+                        node.Remove();
                         node = next;
                     }
                 }

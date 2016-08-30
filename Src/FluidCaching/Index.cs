@@ -109,12 +109,13 @@ namespace FluidCaching
         /// <summary>AddAsNode new item to index</summary>
         /// <param name="item">item to add</param>
         /// <returns>was item key previously contained in index</returns>
-        public bool AddItem(INode<T> item)
+        public void AddItem(INode<T> item)
         {
             lock (this)
             {
                 TKey key = _getKey(item.Value);
-                return !index.TryAdd(key, new WeakReference<INode<T>>(item, false));
+
+                index[key] = new WeakReference<INode<T>>(item, trackResurrection: false);
             }
         }
 
