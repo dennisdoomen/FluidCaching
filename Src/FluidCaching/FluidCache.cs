@@ -109,20 +109,26 @@ namespace FluidCaching
             bool isDuplicate = (node != null) && (node.Value == item);
             if (!isDuplicate)
             {
-                node = lifeSpan.Add(item);
-            }
+                var newNode = new Node<T>(lifeSpan, item);
 
-            foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
-            {
-                if (keyValue.Value.AddItem(node))
+                foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
                 {
-                    isDuplicate = true;
+                    if (!keyValue.Value.AddItem(newNode))
+                    {
+                        isDuplicate = true;
+                    }
                 }
-            }
 
-            if (!isDuplicate)
-            {
-                lifeSpan.Statistics.RegisterItem();
+                if (!isDuplicate)
+                {
+                    node = newNode;
+                    newNode.Touch();
+                    lifeSpan.Statistics.RegisterItem();
+                }
+                else
+                {
+                    node = FindExistingNode(item);
+                }
             }
 
             return node;

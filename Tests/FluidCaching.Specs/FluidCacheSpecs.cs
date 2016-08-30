@@ -44,12 +44,12 @@ namespace FluidCaching.Specs
             }
         }
 
-        public class When_adding_the_same_item_concurrently : GivenWhenThen
+        public class When_requesting_the_same_new_item_concurrently : GivenWhenThen
         {
             private IIndex<string, User> indexById;
             private FluidCache<User> cache;
 
-            public When_adding_the_same_item_concurrently()
+            public When_requesting_the_same_new_item_concurrently()
             {
                 Given(() =>
                 {
@@ -66,6 +66,46 @@ namespace FluidCaching.Specs
                             Id = id,
                             Name = "Item1"
                         })).Wait();
+                    });
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_still_only_have_a_single_item()
+            {
+                cache.Statistics.Current.Should().Be(1);
+                cache.Statistics.Misses.Should().Be(1);
+            }
+        }
+        public class When_adding_the_same_new_item_concurrently : GivenWhenThen
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_adding_the_same_new_item_concurrently()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id);
+                });
+
+                When(() =>
+                {
+                    Parallel.For(1, 1000, _ =>
+                    {
+                        try
+                        {
+                            cache.Add(new User
+                            {
+                                Id = "item1",
+                                Name = "Item1"
+                            });
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Expected, so ignore
+                        }
                     });
                 });
             }
@@ -135,7 +175,7 @@ namespace FluidCaching.Specs
         {
             private DateTime now;
             private IIndex<string, User> index;
-            private User theUser;
+            private User theOriginalUser;
             private FluidCache<User> cache;
             private readonly TimeSpan minimumAge = 5.Minutes();
             private int capacity;
@@ -146,7 +186,7 @@ namespace FluidCaching.Specs
                 {
                     now = 25.December(2015).At(10, 22);
 
-                    capacity = 20;
+                    capacity = 100;
 
                     cache = new FluidCache<User>(capacity, minimumAge, 1.Hours(), () => now);
 
@@ -159,17 +199,17 @@ namespace FluidCaching.Specs
 
                 When(async () =>
                 {
-                    theUser = await index.GetItem("the user");
+                    theOriginalUser = await index.GetItem("the user");
 
                     for (int id = 0; id < capacity; id++)
                     {
                         await index.GetItem("user " + id);
                     }
 
-                    now = now.Add(minimumAge + 1.Minutes());
+                    now = now.Add(minimumAge + 2.Minutes());
 
                     // Trigger evaluating of the cache
-                    await index.GetItem("some user");
+                    await index.GetItem("some user to trigger a cleanup");
 
                     // Make sure any weak references are cleaned up
                     GC.Collect();
@@ -182,7 +222,14 @@ namespace FluidCaching.Specs
             [Fact]
             public void Then_it_should_have_removed_the_original_object_from_the_cache_and_create_a_new_one()
             {
-                Result.Should().NotBeSameAs(theUser);
+                Result.Should().NotBeSameAs(theOriginalUser);
+            }
+
+            [Fact]
+            public async Task Then_successive_requests_for_that_key_should_return_the_new_object()
+            {
+                var theUser = await index.GetItem("the user");
+                Result.Should().BeSameAs(theUser);
             }
         }
 
@@ -270,5 +317,10 @@ namespace FluidCaching.Specs
         public string Id { get; set; }
 
         public string Name { get; set; }
+
+        public override string ToString()
+        {
+            return $"{{Id: {Id}, Name: {Name}}}";
+        }
     }
 }

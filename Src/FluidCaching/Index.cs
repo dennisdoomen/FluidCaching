@@ -14,7 +14,7 @@ namespace FluidCaching
     {
         private readonly FluidCache<T> owner;
         private readonly LifespanManager<T> lifespanManager;
-        private ConcurrentDictionary<TKey, WeakReference<INode<T>>> index;
+        private Dictionary<TKey, WeakReference<INode<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemCreator<TKey, T> loadItem;
         
@@ -30,7 +30,7 @@ namespace FluidCaching
             Debug.Assert(getKey != null, "GetKey delegate required");
             this.owner = owner;
             this.lifespanManager = lifespanManager;
-            index = new ConcurrentDictionary<TKey, WeakReference<INode<T>>>();
+            index = new Dictionary<TKey, WeakReference<INode<T>>>();
             _getKey = getKey;
             this.loadItem = loadItem;
             RebuildIndex();
@@ -108,13 +108,23 @@ namespace FluidCaching
 
         /// <summary>AddAsNode new item to index</summary>
         /// <param name="item">item to add</param>
-        /// <returns>was item key previously contained in index</returns>
+        /// <returns>
+        /// Returns <c>true</c> if the item could be added to the index, or <c>false</c> otherwise.
+        /// </returns>
         public bool AddItem(INode<T> item)
         {
             lock (this)
             {
                 TKey key = _getKey(item.Value);
-                return !index.TryAdd(key, new WeakReference<INode<T>>(item, false));
+
+                INode<T> node;
+                if (!index.ContainsKey(key) || !index[key].TryGetTarget(out node) || node.Value == null)
+                {
+                    index[key] = new WeakReference<INode<T>>(item, trackResurrection: false);
+                    return true;
+                }
+
+                return false;
             }
         }
 
@@ -125,10 +135,9 @@ namespace FluidCaching
             {
                 // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
                 var keyValues = lifespanManager
-                    .Select(item => new KeyValuePair<TKey, WeakReference<INode<T>>>(_getKey(item.Value), new WeakReference<INode<T>>(item)))
-                    .ToArray();
+                    .ToDictionary(item => _getKey(item.Value), item => new WeakReference<INode<T>>(item));
 
-                index = new ConcurrentDictionary<TKey, WeakReference<INode<T>>>(keyValues);
+                index = new Dictionary<TKey, WeakReference<INode<T>>>(keyValues);
                 return index.Count;
             }
         }

@@ -46,11 +46,6 @@ namespace FluidCaching
 
         public IsValid ValidateCache { get; set; }
 
-        public INode<T> Add(T value)
-        {
-            return new Node<T>(this, value);
-        }
-
         /// <summary>checks to see if cache is still valid and if LifespanMgr needs to do maintenance</summary>
         public void CheckValidity()
         {
@@ -160,8 +155,7 @@ namespace FluidCaching
                     while (node != null)
                     {
                         Node<T> next = node.Next;
-                        node.Next = null;
-                        node.Bag = null;
+                        node.Remove();
                         node = next;
                     }
                 }
