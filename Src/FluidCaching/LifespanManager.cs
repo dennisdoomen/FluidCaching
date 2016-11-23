@@ -15,11 +15,10 @@ namespace FluidCaching
         private DateTime nextValidityCheck;
         private readonly int bagItemLimit;
 
-        private readonly AgeBag<T>[] bags;
+        private readonly OrderedAgeBagCollection<T> bags;
         internal int itemsInCurrentBag;
         private int currentBagIndex;
         private int oldestBagIndex;
-        private const int nrBags = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
 
         public LifespanManager(FluidCache<T> owner, int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow)
         {
@@ -30,12 +29,9 @@ namespace FluidCaching
             this.maxAge = TimeSpan.FromMilliseconds(maxMS);
             validatyCheckInterval = TimeSpan.FromMilliseconds(maxMS / 240.0); // max timeslice = 3 min
             bagItemLimit = Math.Max(capacity / 20, 1); // max 5% of capacity per bag
-            bags = new AgeBag<T>[nrBags];
 
-            for (int loop = nrBags - 1; loop >= 0; --loop)
-            {
-                bags[loop] = new AgeBag<T>();
-            }
+            const int nrBags = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
+            bags = new OrderedAgeBagCollection<T>(nrBags);
 
             Statistics = new CacheStats(capacity);
 
@@ -91,7 +87,7 @@ namespace FluidCaching
             lock (this)
             {
                 int itemsToRemove = Statistics.Current - Statistics.Capacity;
-                AgeBag<T> bag = bags[oldestBagIndex % nrBags];
+                AgeBag<T> bag = bags[oldestBagIndex];
 
                 while (AlmostOutOfBags || bag.HasExpired(maxAge, now) ||
                        (itemsToRemove > 0 && bag.HasReachedMinimumAge(minAge, now)))
@@ -124,7 +120,7 @@ namespace FluidCaching
 
                     // increment oldest bag
                     ++oldestBagIndex;
-                    bag = bags[oldestBagIndex % nrBags];
+                    bag = bags[oldestBagIndex];
 
                     if (HasProcessedAllBags)
                     {
@@ -137,7 +133,7 @@ namespace FluidCaching
             }
         }
 
-        private bool AlmostOutOfBags => (currentBagIndex - oldestBagIndex) > (nrBags - 5);
+        private bool AlmostOutOfBags => (currentBagIndex - oldestBagIndex) > (bags.Count - 5);
 
         private bool HasProcessedAllBags => (oldestBagIndex == currentBagIndex);
 
@@ -148,17 +144,7 @@ namespace FluidCaching
         {
             lock (this)
             {
-                foreach (AgeBag<T> bag in bags)
-                {
-                    Node<T> node = bag.First;
-                    bag.First = null;
-                    while (node != null)
-                    {
-                        Node<T> next = node.Next;
-                        node.Remove();
-                        node = next;
-                    }
-                }
+                bags.Empty();
 
                 Statistics.Reset();
 
@@ -183,7 +169,7 @@ namespace FluidCaching
                 // open new age bag for next time slice
                 currentBagIndex = bagNumber;
 
-                AgeBag<T> currentBag = bags[currentBagIndex % nrBags];
+                AgeBag<T> currentBag = bags[currentBagIndex];
                 currentBag.StartTime = now;
                 currentBag.First = null;
 
@@ -200,7 +186,7 @@ namespace FluidCaching
         {
             for (int bagNumber = currentBagIndex; bagNumber >= oldestBagIndex; --bagNumber)
             {
-                AgeBag<T> bag = bags[bagNumber % nrBags];
+                AgeBag<T> bag = bags[bagNumber];
                 // if bag.first == null then bag is empty or being cleaned up, so skip it!
                 for (Node<T> node = bag.First; node != null && bag.First != null; node = node.Next)
                 {
