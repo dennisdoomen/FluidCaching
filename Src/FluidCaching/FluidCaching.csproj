@@ -40,6 +40,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AgeBag.cs" />
+    <Compile Include="OrderedAgeBagCollection.cs" />
     <Compile Include="CacheStats.cs" />
     <Compile Include="FluidCache.cs" />
     <Compile Include="GetKey.cs" />
