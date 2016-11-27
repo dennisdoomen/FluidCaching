@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,14 +16,14 @@ namespace FluidCaching
         private Dictionary<TKey, WeakReference<INode<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemCreator<TKey, T> loadItem;
-        
 
         /// <summary>constructor</summary>
         /// <param name="owner">parent of index</param>
         /// <param name="lifespanManager"></param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
-        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey, ItemCreator<TKey, T> loadItem)
+        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey,
+            ItemCreator<TKey, T> loadItem)
         {
             Debug.Assert(owner != null, "owner argument required");
             Debug.Assert(getKey != null, "GetKey delegate required");
@@ -47,9 +46,7 @@ namespace FluidCaching
             INode<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
-            lifespanManager.CheckValidity();
-
-            ItemCreator<TKey, T> creator = createItem ?? this.loadItem;
+            ItemCreator<TKey, T> creator = createItem ?? loadItem;
             if ((node?.Value == null) && (creator != null))
             {
                 T value = await creator(key);
@@ -61,8 +58,9 @@ namespace FluidCaching
                     {
                         node = owner.AddAsNode(value);
                     }
-                }
 
+                    lifespanManager.CheckValidity();
+                }
             }
 
             return node?.Value;
@@ -73,9 +71,19 @@ namespace FluidCaching
         public void Remove(TKey key)
         {
             INode<T> node = FindExistingNodeByKey(key);
-            node?.Remove();
+            if (node != null)
+            {
+                lock (this)
+                {
+                    node = FindExistingNodeByKey(key);
+                    if (node != null)
+                    {
+                        node.Remove();
 
-            lifespanManager.CheckValidity();
+                        lifespanManager.CheckValidity();
+                    }
+                }
+            }
         }
 
         /// <summary>try to find this item in the index and return Node</summary>
@@ -90,7 +98,7 @@ namespace FluidCaching
             INode<T> node;
             if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
             {
-                lifespanManager.Statistics.RegisterHit();
+                lifespanManager.Stats.RegisterHit();
                 return node;
             }
 
