@@ -30,7 +30,6 @@ namespace FluidCaching
 #else
     internal
 #endif
-
         class FluidCache<T> where T : class
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
@@ -56,7 +55,9 @@ namespace FluidCaching
         /// <summary>
         /// Gets a collection of statistics for the current cache instance.
         /// </summary>
-        public CacheStats Statistics => lifeSpan.Statistics;
+        public CacheStats Statistics => lifeSpan.Stats;
+
+        internal IEnumerable<IIndexManagement<T>> Indexes => indexList.Values;
 
         /// <summary>Retrieve a index by name</summary>
         public IIndex<TKey, T> GetIndex<TKey>(string indexName)
@@ -119,15 +120,18 @@ namespace FluidCaching
                     }
                 }
 
-                if (!isDuplicate)
+                lock (this)
                 {
-                    node = newNode;
-                    newNode.Touch();
-                    lifeSpan.Statistics.RegisterItem();
-                }
-                else
-                {
-                    node = FindExistingNode(item);
+                    if (!isDuplicate)
+                    {
+                        node = newNode;
+                        newNode.Touch();
+                        lifeSpan.Stats.RegisterItem();
+                    }
+                    else
+                    {
+                        node = FindExistingNode(item);
+                    }
                 }
             }
 
@@ -157,18 +161,6 @@ namespace FluidCaching
             }
 
             lifeSpan.Clear();
-        }
-
-        internal void CheckIndexValid()
-        {
-            // if indexes are getting too big its time to rebuild them
-            if (Statistics.RequiresRebuild)
-            {
-                foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
-                {
-                    Statistics.MarkAsRebuild(keyValue.Value.RebuildIndex());
-                }
-            }
         }
     }
 }

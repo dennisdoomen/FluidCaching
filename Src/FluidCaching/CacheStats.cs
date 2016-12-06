@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 
 namespace FluidCaching
@@ -17,10 +18,50 @@ namespace FluidCaching
         private long misses;
         private long hits;
 
-        internal CacheStats(int capacity)
+        public CacheStats(int capacity, int nrBags, int bagItemLimit, TimeSpan minAge, TimeSpan maxAge, TimeSpan validatyCheckInterval)
         {
             Capacity = capacity;
+            BagCount = nrBags;
+            BagSize = bagItemLimit;
+            MinAge = minAge;
+            MaxAge = maxAge;
+            CleanupInterval = validatyCheckInterval;
         }
+
+        /// <summary>
+        /// Gets the interval at which the cache will run a clean-up (if neede).
+        /// </summary>
+        public TimeSpan CleanupInterval { get; set; }
+
+        /// <summary>
+        /// Gets the amount of time before a cache item will be removed from the cache during a validity check.
+        /// </summary>
+        public TimeSpan MaxAge { get; set; }
+
+        /// <summary>
+        /// Gets the amount of time a cache item will remain in the cache (even though it might exceed the capacity).
+        /// </summary>
+        public TimeSpan MinAge { get; private set; }
+
+        /// <summary>
+        /// Gets the number of cached items each age bage contains.
+        /// </summary>
+        public int BagSize { get; private set; }
+
+        /// <summary>
+        /// Gets the number of internal age bags the cache maintains.
+        /// </summary>
+        public int BagCount { get; private set; }
+
+        /// <summary>
+        /// Gets the zero-based index of the oldest bag in use.
+        /// </summary>
+        public int OldestBagIndex { get; private set; }
+
+        /// <summary>
+        /// Gets the zero-based index of the bag that currently receives new cache items.
+        /// </summary>
+        public int CurrentBagIndex { get; private set; }
 
         /// <summary>
         /// Gets a value indicating the maximum number of items the cache should support. 
@@ -85,7 +126,7 @@ namespace FluidCaching
             Interlocked.Increment(ref hits);
         }
 
-        internal bool RequiresRebuild => totalCount - current > Capacity;
+        internal bool RequiresRebuild => (totalCount - current) > Capacity;
 
         internal void MarkAsRebuild(int rebuildIndexSize)
         {
@@ -98,7 +139,17 @@ namespace FluidCaching
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return $"Capacity: {Capacity}, Current: {current}, Total: {totalCount}, Hits: {hits}, Misses: {misses}";
+            return 
+                $"{{" +
+                $"\n\tCapacity: {Capacity} \n\tCurrent: {current} \n\tTotal: {totalCount} \n\tHits: {hits} \n\tMisses: {misses}" +
+                $"\n\tOldestBagIndex: {OldestBagIndex} \n\tCurrentBagIndex: {CurrentBagIndex}" +
+                $"\n}}";
+        }
+
+        internal void RegisterRawBagIndexes(int oldestBagIndex, int currentBagIndex)
+        {
+            CurrentBagIndex = currentBagIndex % BagCount;
+            OldestBagIndex = oldestBagIndex % BagCount;
         }
     }
 }

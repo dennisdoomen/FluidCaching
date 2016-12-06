@@ -33,7 +33,7 @@ namespace FluidCaching
             const int nrBags = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
             bags = new OrderedAgeBagCollection<T>(nrBags);
 
-            Statistics = new CacheStats(capacity);
+            Stats = new CacheStats(capacity, nrBags, bagItemLimit, minAge, this.maxAge, validatyCheckInterval);
 
             OpenBag(0);
         }
@@ -54,7 +54,7 @@ namespace FluidCaching
                     if (RequiresCleanup)
                     {
                         // if cache is no longer valid throw contents away and start over, else cleanup old items
-                        if ((currentBagIndex > 1000000) || ((ValidateCache != null) && !ValidateCache()))
+                        if ((CurrentBagIndex > 1000000) || ((ValidateCache != null) && !ValidateCache()))
                         {
                             owner.Clear();
                         }
@@ -86,15 +86,16 @@ namespace FluidCaching
         {
             lock (this)
             {
-                int itemsToRemove = Statistics.Current - Statistics.Capacity;
-                AgeBag<T> bag = bags[oldestBagIndex];
+                int itemsAboveCapacity = Stats.Current - Stats.Capacity;
+                AgeBag<T> bag = bags[OldestBagIndex];
 
                 while (AlmostOutOfBags || bag.HasExpired(maxAge, now) ||
-                       (itemsToRemove > 0 && bag.HasReachedMinimumAge(minAge, now)))
+                       (itemsAboveCapacity > 0 && bag.HasReachedMinimumAge(minAge, now)))
                 {
                     // cache is still too big / old so remove oldest bag
                     Node<T> node = bag.First;
                     bag.First = null;
+
                     while (node != null)
                     {
                         Node<T> next = node.Next;
@@ -104,7 +105,7 @@ namespace FluidCaching
                             if (node.Bag == bag)
                             {
                                 // item has not been touched since bag was closed, so remove it from LifespanMgr
-                                ++itemsToRemove;
+                                ++itemsAboveCapacity;
                                 node.Remove();
                             }
                             else
@@ -118,9 +119,7 @@ namespace FluidCaching
                         node = next;
                     }
 
-                    // increment oldest bag
-                    ++oldestBagIndex;
-                    bag = bags[oldestBagIndex];
+                    bag = bags[++OldestBagIndex];
 
                     if (HasProcessedAllBags)
                     {
@@ -128,16 +127,49 @@ namespace FluidCaching
                     }
                 }
 
-                OpenBag(++currentBagIndex);
-                owner.CheckIndexValid();
+                OpenBag(++CurrentBagIndex);
+
+                EnsureIndexIsValid();
             }
         }
 
-        private bool AlmostOutOfBags => (currentBagIndex - oldestBagIndex) > (bags.Count - 5);
+        private void EnsureIndexIsValid()
+        {
+            // if indexes are getting too big its time to rebuild them
+            if (Stats.RequiresRebuild)
+            {
+                foreach (IIndexManagement<T> index in owner.Indexes)
+                {
+                    Stats.MarkAsRebuild(index.RebuildIndex());
+                }
+            }
+        }
+        
+        private bool AlmostOutOfBags => (CurrentBagIndex - OldestBagIndex) > (bags.Count - 5);
 
-        private bool HasProcessedAllBags => (oldestBagIndex == currentBagIndex);
+        private bool HasProcessedAllBags => (OldestBagIndex == CurrentBagIndex);
 
-        public CacheStats Statistics { get; }
+        public CacheStats Stats { get; }
+
+        private int OldestBagIndex
+        {
+            get { return oldestBagIndex; }
+            set
+            {
+                oldestBagIndex = value;
+                Stats.RegisterRawBagIndexes(oldestBagIndex, currentBagIndex);
+            }
+        }
+
+        public int CurrentBagIndex
+        {
+            get { return currentBagIndex; }
+            set
+            {
+                currentBagIndex = value;
+                Stats.RegisterRawBagIndexes(oldestBagIndex, currentBagIndex);
+            }
+        }
 
         /// <summary>Remove all items from LifespanMgr and reset</summary>
         public void Clear()
@@ -146,10 +178,10 @@ namespace FluidCaching
             {
                 bags.Empty();
 
-                Statistics.Reset();
+                Stats.Reset();
 
                 // reset age bags
-                OpenBag(oldestBagIndex = 0);
+                OpenBag(OldestBagIndex = 0);
             }
         }
 
@@ -167,9 +199,9 @@ namespace FluidCaching
                 }
 
                 // open new age bag for next time slice
-                currentBagIndex = bagNumber;
+                CurrentBagIndex = bagNumber;
 
-                AgeBag<T> currentBag = bags[currentBagIndex];
+                AgeBag<T> currentBag = bags[CurrentBagIndex];
                 currentBag.StartTime = now;
                 currentBag.First = null;
 
@@ -182,9 +214,15 @@ namespace FluidCaching
         }
 
         /// <summary>Create item enumerator</summary>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>Create item enumerator</summary>
         public IEnumerator<INode<T>> GetEnumerator()
         {
-            for (int bagNumber = currentBagIndex; bagNumber >= oldestBagIndex; --bagNumber)
+            for (int bagNumber = CurrentBagIndex; bagNumber >= OldestBagIndex; --bagNumber)
             {
                 AgeBag<T> bag = bags[bagNumber];
                 // if bag.first == null then bag is empty or being cleaned up, so skip it!
@@ -198,12 +236,6 @@ namespace FluidCaching
             }
         }
 
-        /// <summary>Create item enumerator</summary>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
         public Node<T> AddToHead(Node<T> node)
         {
             lock (this)
@@ -211,7 +243,7 @@ namespace FluidCaching
                 Node<T> next = CurrentBag.First;
                 CurrentBag.First = node;
 
-                Statistics.RegisterMiss();
+                Stats.RegisterMiss();
 
                 return next;
             }
@@ -219,7 +251,7 @@ namespace FluidCaching
 
         public void UnregisterFromLifespanManager()
         {
-            Statistics.UnregisterItem();
+            Stats.UnregisterItem();
         }
     }
 }

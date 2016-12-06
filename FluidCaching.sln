@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching.Specs", "Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergeCSharpFiles", "Src\MergeCSharpFiles\MergeCSharpFiles.csproj", "{3220F580-0239-4D63-B17C-5143F9BB1EB4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "Samples\ExampleApp\ExampleApp.csproj", "{6003B499-8852-4104-AAF9-E585150679A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3220F580-0239-4D63-B17C-5143F9BB1EB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6003B499-8852-4104-AAF9-E585150679A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6003B499-8852-4104-AAF9-E585150679A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6003B499-8852-4104-AAF9-E585150679A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6003B499-8852-4104-AAF9-E585150679A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

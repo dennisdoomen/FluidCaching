@@ -310,6 +310,51 @@ namespace FluidCaching.Specs
                 cache.Statistics.Misses.Should().Be(1);
             }
         }
+
+        public class When_concurrently_adding_unique_items_directly_or_through_a_get : GivenWhenThen
+        {
+            private FluidCache<User> cache;
+            private IIndex<string, User> indexById;
+
+            public When_concurrently_adding_unique_items_directly_or_through_a_get()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+
+                });
+
+                When(() =>
+                {
+                    Parallel.For(0, 1000, iteration =>
+                    {
+                        if (iteration % 2 == 0)
+                        {
+                            cache.Add(new User
+                            {
+                                Id = iteration.ToString(),
+                                Name = iteration.ToString()
+                            });
+                        }
+                        else
+                        {
+                            indexById.GetItem(iteration.ToString(), key => Task.FromResult(new User
+                            {
+                                Id = key,
+                                Name = key
+                            }));
+                        }
+                    });
+                });
+            }
+
+            [Fact]
+            public void It_should_have_added_the_act_same_number_of_items()
+            {
+                cache.Statistics.Current.Should().Be(1000);
+            }
+        }
     }
 
     public class User
