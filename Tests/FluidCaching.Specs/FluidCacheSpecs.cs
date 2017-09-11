@@ -233,6 +233,35 @@ namespace FluidCaching.Specs
             }
         }
 
+        public class When_an_item_doesnt_exist_in_the_cache_and_the_factory_returns_a_null_task : GivenWhenThen<Func<Task>>
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_an_item_doesnt_exist_in_the_cache_and_the_factory_returns_a_null_task()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+                });
+
+                When(() =>
+                {
+                    return async () => await indexById.GetItem("itemkey", k => null);
+                });
+            }
+
+            [Fact]
+            public void Then_it_should_return_a_null()
+            {
+                Result
+                    .ShouldThrow<ArgumentNullException>()
+                    .WithMessage("*createItem*");
+            }
+        }
+
+
         public class When_an_item_did_not_exist_in_the_cache : GivenWhenThen
         {
             private IIndex<string, User> indexById;

@@ -49,7 +49,14 @@ namespace FluidCaching
             ItemCreator<TKey, T> creator = createItem ?? loadItem;
             if ((node?.Value == null) && (creator != null))
             {
-                T value = await creator(key);
+                Task<T> task = creator(key);
+                if (task == null)
+                {
+                    throw new ArgumentNullException(nameof(createItem),
+                        "Expected a non-null Task. Did you intend to return a null-returning Task instead?");
+                }
+
+                T value = await task;
 
                 lock (this)
                 {
