@@ -163,3 +163,6 @@ $RECYCLE.BIN/
 Package/Lib
 *.nupkg
 *.zip
+
+# User-specific stuff:
+.idea
