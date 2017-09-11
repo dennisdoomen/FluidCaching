@@ -68,7 +68,7 @@ task Compile {
 }
 
 task RunTests -depends Compile -Description "Running all unit tests." {
-    $xunitRunner = "$BaseDirectory\Packages\xunit.runner.console.2.0.0\tools\xunit.console.exe"
+    $xunitRunner = "$BaseDirectory\Packages\xunit.runner.console.2.2.0\tools\xunit.console.exe"
 	
     if (!(Test-Path $ArtifactsDirectory)) {
 		New-Item $ArtifactsDirectory -Type Directory
