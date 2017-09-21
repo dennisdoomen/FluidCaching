@@ -7,8 +7,27 @@ namespace FluidCaching
 {
     internal class LifespanManager<T> : IEnumerable<INode<T>> where T : class
     {
-        private const int MaxItemsInBag = 20;
+        /// <summary>
+        /// The number of bags which should be enough to store the requested capacity of items. The heuristic is that each
+        /// bag should contain about 5% of the capacity. 
+        /// </summary>
+        private const int PreferedNrOfBags = 20;
+
+        /// <summary>
+        /// Numbers of bags to keep open as a buffer when the minimum age forces more items to be there than the capacity allows.
+        /// </summary>
         private const int EmptyBagsBuffer = 5;
+
+        /// <summary>
+        /// No item should be kept in the cache for more than this amount, irrespective of the consumer-provided max age.
+        /// </summary>
+        private readonly TimeSpan MaxMaxAge = TimeSpan.FromHours(12);
+
+        /// <summary>
+        /// Maximum interval at which we want to a validity check.
+        /// </summary>
+        private readonly TimeSpan MaxInterval = TimeSpan.FromMinutes(3);
+
         private readonly FluidCache<T> owner;
         private readonly TimeSpan minAge;
         private readonly GetNow getNow;
@@ -28,18 +47,17 @@ namespace FluidCaching
             this.minAge = minAge;
             this.getNow = getNow;
 
-            // NOTE: Max = 12 hours
-            this.maxAge = TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, (double) 12 * 60 * 60 * 1000));
+            this.maxAge = TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, MaxMaxAge.TotalMilliseconds));
 
-            // NOTE: Max timeslice = 3 min
             validatyCheckInterval =
-                TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, (double) 12 * 60 * 60 * 1000) / 240);
+                TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, MaxInterval.TotalMilliseconds));
 
-            // NOTE: Max 5% of capacity per bag
-            bagItemLimit = Math.Max(capacity / MaxItemsInBag, 1);
+            bagItemLimit = Math.Max(capacity / PreferedNrOfBags, 1);
+
+            int nrTimeSlices = (int)(MaxMaxAge.TotalMilliseconds / MaxInterval.TotalMilliseconds);
 
             // NOTE: Based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
-            const int nrBags = 240 + MaxItemsInBag + EmptyBagsBuffer;
+            int nrBags = nrTimeSlices + PreferedNrOfBags + EmptyBagsBuffer;
             bags = new OrderedAgeBagCollection<T>(nrBags);
 
             Stats = new CacheStats(capacity, nrBags, bagItemLimit, minAge, this.maxAge, validatyCheckInterval);
@@ -129,7 +147,7 @@ namespace FluidCaching
                     {
                         // item has not been touched since bag was closed, so remove it from LifespanMgr
                         --itemsAboveCapacity;
-                        node.Remove();
+                        node.RemoveFromCache();
                     }
                     else
                     {
@@ -141,6 +159,7 @@ namespace FluidCaching
 
                 node = nextNode;
             }
+
             return itemsAboveCapacity;
         }
 

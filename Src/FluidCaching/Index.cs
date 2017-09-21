@@ -85,7 +85,7 @@ namespace FluidCaching
                     node = FindExistingNodeByKey(key);
                     if (node != null)
                     {
-                        node.Remove();
+                        node.RemoveFromCache();
 
                         lifespanManager.CheckValidity();
                     }

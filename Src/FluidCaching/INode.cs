@@ -7,6 +7,6 @@ namespace FluidCaching
     {
         T Value { get; }
         void Touch();
-        void Remove();
+        void RemoveFromCache();
     }
 }
