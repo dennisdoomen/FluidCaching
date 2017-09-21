@@ -7,6 +7,27 @@ namespace FluidCaching
 {
     internal class LifespanManager<T> : IEnumerable<INode<T>> where T : class
     {
+        /// <summary>
+        /// The number of bags which should be enough to store the requested capacity of items. The heuristic is that each
+        /// bag should contain about 5% of the capacity. 
+        /// </summary>
+        private const int PreferedNrOfBags = 20;
+
+        /// <summary>
+        /// Numbers of bags to keep open as a buffer when the minimum age forces more items to be there than the capacity allows.
+        /// </summary>
+        private const int EmptyBagsBuffer = 5;
+
+        /// <summary>
+        /// No item should be kept in the cache for more than this amount, irrespective of the consumer-provided max age.
+        /// </summary>
+        private readonly TimeSpan MaxMaxAge = TimeSpan.FromHours(12);
+
+        /// <summary>
+        /// Maximum interval at which we want to a validity check.
+        /// </summary>
+        private readonly TimeSpan MaxInterval = TimeSpan.FromMinutes(3);
+
         private readonly FluidCache<T> owner;
         private readonly TimeSpan minAge;
         private readonly GetNow getNow;
@@ -23,14 +44,20 @@ namespace FluidCaching
         public LifespanManager(FluidCache<T> owner, int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow)
         {
             this.owner = owner;
-            double maxMS = Math.Min(maxAge.TotalMilliseconds, (double) 12 * 60 * 60 * 1000); // max = 12 hours
             this.minAge = minAge;
             this.getNow = getNow;
-            this.maxAge = TimeSpan.FromMilliseconds(maxMS);
-            validatyCheckInterval = TimeSpan.FromMilliseconds(maxMS / 240.0); // max timeslice = 3 min
-            bagItemLimit = Math.Max(capacity / 20, 1); // max 5% of capacity per bag
 
-            const int nrBags = 265; // based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
+            this.maxAge = TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, MaxMaxAge.TotalMilliseconds));
+
+            validatyCheckInterval =
+                TimeSpan.FromMilliseconds(Math.Min(maxAge.TotalMilliseconds, MaxInterval.TotalMilliseconds));
+
+            bagItemLimit = Math.Max(capacity / PreferedNrOfBags, 1);
+
+            int nrTimeSlices = (int)(MaxMaxAge.TotalMilliseconds / MaxInterval.TotalMilliseconds);
+
+            // NOTE: Based on 240 timeslices + 20 bags for ItemLimit + 5 bags empty buffer
+            int nrBags = nrTimeSlices + PreferedNrOfBags + EmptyBagsBuffer;
             bags = new OrderedAgeBagCollection<T>(nrBags);
 
             Stats = new CacheStats(capacity, nrBags, bagItemLimit, minAge, this.maxAge, validatyCheckInterval);
@@ -45,7 +72,7 @@ namespace FluidCaching
         /// <summary>checks to see if cache is still valid and if LifespanMgr needs to do maintenance</summary>
         public void CheckValidity()
         {
-            // Note: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
+            // NOTE: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
             // does not wait for a lock, if lock is currently held then skip and let next Touch perform cleanup.
             if (RequiresCleanup && Monitor.TryEnter(this))
             {
@@ -89,49 +116,61 @@ namespace FluidCaching
                 int itemsAboveCapacity = Stats.Current - Stats.Capacity;
                 AgeBag<T> bag = bags[OldestBagIndex];
 
-                while (AlmostOutOfBags || bag.HasExpired(maxAge, now) ||
-                       (itemsAboveCapacity > 0 && bag.HasReachedMinimumAge(minAge, now)))
+                while (!HasProcessedAllBags && (AlmostOutOfBags || BagNeedsCleaning(bag, itemsAboveCapacity, now)))
                 {
-                    // cache is still too big / old so remove oldest bag
-                    Node<T> node = bag.First;
-                    bag.First = null;
+                    itemsAboveCapacity = CleanBag(bag, itemsAboveCapacity);
 
-                    while (node != null)
-                    {
-                        Node<T> next = node.Next;
-                        node.Next = null;
-                        if (node.Value != null && node.Bag != null)
-                        {
-                            if (node.Bag == bag)
-                            {
-                                // item has not been touched since bag was closed, so remove it from LifespanMgr
-                                ++itemsAboveCapacity;
-                                node.Remove();
-                            }
-                            else
-                            {
-                                // item has been touched and should be moved to correct age bag now
-                                node.Next = node.Bag.First;
-                                node.Bag.First = node;
-                            }
-                        }
-
-                        node = next;
-                    }
-
-                    bag = bags[++OldestBagIndex];
-
-                    if (HasProcessedAllBags)
-                    {
-                        break;
-                    }
+                    ++OldestBagIndex;
+                    bag = bags[OldestBagIndex];
                 }
 
-                OpenBag(++CurrentBagIndex);
+                ++CurrentBagIndex;
+                OpenBag(CurrentBagIndex);
 
                 EnsureIndexIsValid();
             }
         }
+
+        private static int CleanBag(AgeBag<T> bag, int itemsAboveCapacity)
+        {
+            Node<T> node = bag.First;
+            bag.First = null;
+
+            while (node != null)
+            {
+                Node<T> nextNode = node.Next;
+
+                node.Next = null;
+                if (node.Value != null && node.Bag != null)
+                {
+                    if (node.Bag == bag)
+                    {
+                        // item has not been touched since bag was closed, so remove it from LifespanMgr
+                        --itemsAboveCapacity;
+                        node.RemoveFromCache();
+                    }
+                    else
+                    {
+                        // item has been touched and should be moved to correct age bag now
+                        node.Next = node.Bag.First;
+                        node.Bag.First = node;
+                    }
+                }
+
+                node = nextNode;
+            }
+
+            return itemsAboveCapacity;
+        }
+
+        private bool BagNeedsCleaning(AgeBag<T> bag, int itemsAboveCapacity, DateTime now)
+        {
+            return bag.HasExpired(maxAge, now) || (itemsAboveCapacity > 0 && bag.HasReachedMinimumAge(minAge, now));
+        }
+
+        private bool HasProcessedAllBags => (OldestBagIndex == CurrentBagIndex);
+
+        private bool AlmostOutOfBags => (CurrentBagIndex - OldestBagIndex) > (bags.Count - EmptyBagsBuffer);
 
         private void EnsureIndexIsValid()
         {
@@ -144,10 +183,6 @@ namespace FluidCaching
                 }
             }
         }
-        
-        private bool AlmostOutOfBags => (CurrentBagIndex - OldestBagIndex) > (bags.Count - 5);
-
-        private bool HasProcessedAllBags => (OldestBagIndex == CurrentBagIndex);
 
         public CacheStats Stats { get; }
 

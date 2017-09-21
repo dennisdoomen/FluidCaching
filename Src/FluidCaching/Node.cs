@@ -55,7 +55,7 @@ namespace FluidCaching
         /// <summary>
         /// Removes the object from node, thereby removing it from all indexes and allows it to be garbage collected
         /// </summary>
-        public void Remove()
+        public void RemoveFromCache()
         {
             if ((Bag != null) && (Value != null))
             {

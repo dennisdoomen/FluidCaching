@@ -52,7 +52,7 @@ namespace FluidCaching
                 while (node != null)
                 {
                     Node<T> next = node.Next;
-                    node.Remove();
+                    node.RemoveFromCache();
                     node = next;
                 }
             }

@@ -386,6 +386,48 @@ namespace FluidCaching.Specs
         }
     }
 
+    public class When_the_only_used_bag_expires : GivenWhenThen
+    {
+        private FluidCache<User> cache;
+        private IIndex<string, User> indexById;
+        private Func<Task> func;
+
+        public When_the_only_used_bag_expires()
+        {
+            var dateTime = DateTime.Now;
+
+            Given(async () =>
+            {
+                cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => dateTime);
+                indexById = cache.AddIndex("index", user => user.Id, id => Task.FromResult(new User { Id = id }));
+
+                await indexById.GetItem("key1", key => Task.FromResult(new User
+                {
+                    Id = key,
+                    Name = $"Name of {key}"
+                }));
+
+            });
+
+            When(() =>
+            {
+                dateTime = dateTime.Add(1.Hours());
+
+                func = () => indexById.GetItem("key2", key => Task.FromResult(new User
+                {
+                    Id = key,
+                    Name = $"Name of {key}"
+                }));
+            });
+        }
+
+        [Fact]
+        public void Then_it_should_not_throw()
+        {
+            func.ShouldNotThrow();
+        }
+    }
+
     public class User
     {
         public string Id { get; set; }
