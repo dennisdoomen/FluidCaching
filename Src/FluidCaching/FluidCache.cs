@@ -73,15 +73,20 @@ namespace FluidCaching
             return index?.GetItem(key, item);
         }
 
-            /// <summary>AddAsNode a new index to the cache</summary>
+        /// <summary>Adds a new index to the cache</summary>
         /// <typeparam name="TKey">the type of the key value</typeparam>
         /// <param name="indexName">the name to be associated with this list</param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="item">delegate to load object if it is not found in index</param>
+        /// <param name="keyEqualityComparer">The equality comparer to be used to compare the keys. Optional.</param>
         /// <returns>the newly created index</returns>
-        public IIndex<TKey, T> AddIndex<TKey>(string indexName, GetKey<T, TKey> getKey, ItemCreator<TKey, T> item = null)
+        public IIndex<TKey, T> AddIndex<TKey>(
+            string indexName,
+            GetKey<T, TKey> getKey,
+            ItemCreator<TKey, T> item = null,
+            IEqualityComparer<TKey> keyEqualityComparer = null)
         {
-            var index = new Index<TKey, T>(this, lifeSpan, getKey, item);
+            var index = new Index<TKey, T>(this, lifeSpan, getKey, item, keyEqualityComparer);
             indexList[indexName] = index;
             return index;
         }

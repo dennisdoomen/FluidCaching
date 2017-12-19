@@ -384,6 +384,33 @@ namespace FluidCaching.Specs
                 cache.Statistics.Current.Should().Be(1000);
             }
         }
+
+        public class When_a_case_insensitive_comparer_is_used_for_an_index_and_getting_an_item_by_the_key_with_a_different_case :
+            GivenWhenThen<User>
+        {
+            private IIndex<string, User> indexById;
+            private FluidCache<User> cache;
+
+            public When_a_case_insensitive_comparer_is_used_for_an_index_and_getting_an_item_by_the_key_with_a_different_case()
+            {
+                Given(() =>
+                {
+                    cache = new FluidCache<User>(1000, 5.Seconds(), 10.Seconds(), () => DateTime.Now);
+                    indexById = cache.AddIndex("index", user => user.Id, keyEqualityComparer: StringComparer.OrdinalIgnoreCase);
+
+                    UseThe(new User {Id = "TheId"});
+                    cache.Add(The<User>());
+                });
+
+                When(() => indexById.GetItem("theID"));
+            }
+
+            [Fact]
+            public void Then_it_should_return_the_item()
+            {
+                Result.Should().BeSameAs(The<User>());
+            }
+        }
     }
 
     public class When_the_only_used_bag_expires : GivenWhenThen

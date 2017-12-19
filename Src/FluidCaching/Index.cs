@@ -16,22 +16,28 @@ namespace FluidCaching
         private Dictionary<TKey, WeakReference<INode<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemCreator<TKey, T> loadItem;
+        private readonly IEqualityComparer<TKey> keyEqualityComparer;
 
         /// <summary>constructor</summary>
         /// <param name="owner">parent of index</param>
         /// <param name="lifespanManager"></param>
         /// <param name="getKey">delegate to get key from object</param>
         /// <param name="loadItem">delegate to load object if it is not found in index</param>
-        public Index(FluidCache<T> owner, LifespanManager<T> lifespanManager, GetKey<T, TKey> getKey,
-            ItemCreator<TKey, T> loadItem)
+        /// <param name="keyEqualityComparer">The equality comparer to be used to compare the keys. Optional.</param>
+        public Index(
+            FluidCache<T> owner,
+            LifespanManager<T> lifespanManager,
+            GetKey<T, TKey> getKey,
+            ItemCreator<TKey, T> loadItem,
+            IEqualityComparer<TKey> keyEqualityComparer)
         {
             Debug.Assert(owner != null, "owner argument required");
             Debug.Assert(getKey != null, "GetKey delegate required");
             this.owner = owner;
             this.lifespanManager = lifespanManager;
-            index = new Dictionary<TKey, WeakReference<INode<T>>>();
             _getKey = getKey;
             this.loadItem = loadItem;
+            this.keyEqualityComparer = keyEqualityComparer;
             RebuildIndex();
         }
 
@@ -152,7 +158,7 @@ namespace FluidCaching
                 var keyValues = lifespanManager
                     .ToDictionary(item => _getKey(item.Value), item => new WeakReference<INode<T>>(item));
 
-                index = new Dictionary<TKey, WeakReference<INode<T>>>(keyValues);
+                index = new Dictionary<TKey, WeakReference<INode<T>>>(keyValues, keyEqualityComparer);
                 return index.Count;
             }
         }
