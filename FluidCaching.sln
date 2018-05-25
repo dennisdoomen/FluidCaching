@@ -11,6 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergeCSharpFiles", "Src\Mer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "Samples\ExampleApp\ExampleApp.csproj", "{6003B499-8852-4104-AAF9-E585150679A9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{1E887ABD-9AD9-4B80-957B-7F8D875E0003}"
+ProjectSection(SolutionItems) = preProject
+	Src\.nuspec = Src\.nuspec
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

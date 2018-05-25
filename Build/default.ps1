@@ -16,7 +16,22 @@ properties {
 
 task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, RestoreNugetPackages, Compile, RunTests, BuildPackage, PublishToMyget
 
-task Clean {	
+task DetermineMsBuildPath -depends RestoreNugetPackages {
+	Write-Host "Adding msbuild to the environment path"
+
+	$installationPath = & "$BaseDirectory\Packages\vswhere.2.4.1\tools\vswhere.exe" -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+
+	if ($installationPath) {
+		$msbuildPath = join-path $installationPath 'MSBuild\15.0\Bin'
+
+		if (test-path $msbuildPath) {
+                        Write-Host "msbuild directory set to $msbuildPath"
+			$env:path = "$msbuildPath;$env:path"
+		}
+	}
+}
+
+task Clean -depends DetermineMsBuildPath {	
     TeamCity-Block "Clean" {
 		Get-ChildItem $PackageDirectory *.nupkg | ForEach { Remove-Item $_.FullName }
 	    exec { msbuild $SlnFile /p:Configuration=Release /t:Clean $logger}
@@ -60,7 +75,7 @@ task RestoreNugetPackages {
 	& $Nuget install "$BaseDirectory\Build\packages.config" -OutputDirectory "$BaseDirectory\Packages" -ConfigFile "$BaseDirectory\NuGet.Config"
 }
 
-task Compile {
+task Compile -depends DetermineMsBuildPath {
     TeamCity-Block "Compiling" {  
        
 	    exec { msbuild /v:m /p:Platform="Any CPU" $SlnFile /p:Configuration=Release /p:SourceAnalysisTreatErrorsAsWarnings=false /t:Rebuild $logger}
@@ -86,7 +101,7 @@ task BuildPackage {
         
         & "$ArtifactsDirectory\MergeCSharpFiles.exe" "$SrcDirectory\FluidCaching" *.cs "$ArtifactsDirectory\FluidCaching.cs"
 	
-		& $Nuget pack "$SrcDirectory\.nuspec" -o "$ArtifactsDirectory\" 
+		& $Nuget pack "$SrcDirectory\.nuspec" -OutputDirectory "$ArtifactsDirectory\" 
 	}
 }
 
