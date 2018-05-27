@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
-  <metadata>
+<package >
+  <metadata minClientVersion="3.3.0">
     <id>FluidCaching.Sources</id>
     <title>FluidCaching</title>
-    <version>1.0.2-morefixes0001</version>
+    <version>1.2.1-supportpackagere0001</version>
     <owners>Dennis Doomen</owners>
     <authors>Dennis Doomen</authors>
     <summary>
@@ -17,12 +17,13 @@
     <licenseUrl>https://github.com/dennisdoomen/FluidCaching</licenseUrl>
     <projectUrl>https://github.com/dennisdoomen/FluidCaching</projectUrl>
     <tags>LRU Caching</tags>
-    <copyright>Copyright Dennis Doomen 2015-2016</copyright>
+    <copyright>Copyright Dennis Doomen 2015-2018</copyright>
     <releaseNotes>
       See https://github.com/dennisdoomen/FluidCaching/releases
     </releaseNotes>
   </metadata>
   <files>
-    <file src="..\Artifacts\FluidCaching.cs" target="content/App_Packages/FluidCaching.Sources" />
+    <file src="artifacts/FluidCaching.cs" target="contentFiles/cs/any/" />
+    <file src="artifacts\FluidCaching.cs" target="content/App_Packages/FluidCaching.Sources" />
   </files>
 </package>

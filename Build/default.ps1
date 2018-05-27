@@ -14,7 +14,7 @@ properties {
 	$RunTests = $false
 }
 
-task default -depends Clean, ExtractVersionsFromGit, ApplyPackageVersioning, RestoreNugetPackages, Compile, RunTests, BuildPackage, PublishToMyget
+task default -depends Clean, ExtractVersionsFromGit, RestoreNugetPackages, Compile, RunTests, BuildPackage, PublishToMyget
 
 task DetermineMsBuildPath -depends RestoreNugetPackages {
 	Write-Host "Adding msbuild to the environment path"
@@ -45,9 +45,7 @@ task ExtractVersionsFromGit {
         if ($LASTEXITCODE -eq 0) {
             $version = (ConvertFrom-Json ($json -join "`n"));
 
-            TeamCity-SetBuildNumber $version.FullSemVer;
-
-            $script:AssemblyVersion = $version.ClassicVersion;
+            $script:AssemblyVersion = $version.AssemblySemVer;
             $script:InfoVersion = $version.InformationalVersion;
             $script:NuGetVersion = $version.NuGetVersion;
         }
@@ -56,30 +54,37 @@ task ExtractVersionsFromGit {
         }
 }
 
-task ApplyPackageVersioning -depends ExtractVersionsFromGit {
-    TeamCity-Block "Updating package version to $script:NuGetVersion" {   
-	
-		$fullName = "$SrcDirectory\.nuspec"
-
-	    Set-ItemProperty -Path $fullName -Name IsReadOnly -Value $false
-		
-	    $content = Get-Content $fullName
-	    $content = $content -replace '<version>.+</version>', ('<version>' + "$script:NuGetVersion" + '</version>')
-	    Set-Content -Path $fullName $content
-	}
-}
-
 task RestoreNugetPackages {
 
 	& $Nuget restore "$BaseDirectory\FluidCaching.sln"  
 	& $Nuget install "$BaseDirectory\Build\packages.config" -OutputDirectory "$BaseDirectory\Packages" -ConfigFile "$BaseDirectory\NuGet.Config"
 }
 
-task Compile -depends DetermineMsBuildPath {
+task Compile -depends DetermineMsBuildPath, ApplyAssemblyVersioning {
     TeamCity-Block "Compiling" {  
        
 	    exec { msbuild /v:m /p:Platform="Any CPU" $SlnFile /p:Configuration=Release /p:SourceAnalysisTreatErrorsAsWarnings=false /t:Rebuild $logger}
     }
+}
+
+task ApplyAssemblyVersioning -depends ExtractVersionsFromGit {
+	Get-ChildItem -Path "$SrcDirectory/FluidCaching" -Filter "AssemblyInfo.cs" -Recurse -Force | foreach-object {
+
+		$content = Get-Content $_.FullName
+
+		if ($script:AssemblyVersion) {
+			Write-Output "Updating " $_.FullName "with version" $script:AssemblyVersion
+			$content = $content -replace 'AssemblyVersion\("(.+)"\)', ('AssemblyVersion("' + $script:AssemblyVersion + '")')
+			$content = $content -replace 'AssemblyFileVersion\("(.+)"\)', ('AssemblyFileVersion("' + $script:AssemblyVersion + '")')
+		}
+
+		if ($script:InfoVersion) {
+			Write-Output "Updating " $_.FullName "with information version" $script:InfoVersion
+			$content = $content -replace 'AssemblyInformationalVersion\("(.+)"\)', ('AssemblyInformationalVersion("' + $script:InfoVersion + '")')
+		}
+
+		Set-Content -Path $_.FullName $content
+	}
 }
 
 task RunTests -depends Compile -Description "Running all unit tests." {
@@ -93,7 +98,7 @@ task RunTests -depends Compile -Description "Running all unit tests." {
 }
 
     
-task BuildPackage {
+task BuildPackage -depends ExtractVersionsFromGit {
     TeamCity-Block "Building NuGet Package" {  
 		if (!(Test-Path "$ArtifactsDirectory\")) {
 			New-Item $ArtifactsDirectory -ItemType Directory
@@ -101,7 +106,8 @@ task BuildPackage {
         
         & "$ArtifactsDirectory\MergeCSharpFiles.exe" "$SrcDirectory\FluidCaching" *.cs "$ArtifactsDirectory\FluidCaching.cs"
 	
-		& $Nuget pack "$SrcDirectory\.nuspec" -OutputDirectory "$ArtifactsDirectory\" 
+		& $Nuget pack "$BaseDirectory\Sources.nuspec" -OutputDirectory "$ArtifactsDirectory\" -Version $script:NuGetVersion
+		& $Nuget pack "$BaseDirectory\Binaries.nuspec" -OutputDirectory "$ArtifactsDirectory\" -Version $script:NuGetVersion
 	}
 }
 
