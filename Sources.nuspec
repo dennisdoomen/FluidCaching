@@ -2,7 +2,7 @@
 <package >
   <metadata minClientVersion="3.3.0">
     <id>FluidCaching.Sources</id>
-    <title>FluidCaching</title>
+    <title>FluidCaching (Source-Only)</title>
     <version>1.2.1-supportpackagere0001</version>
     <owners>Dennis Doomen</owners>
     <authors>Dennis Doomen</authors>
