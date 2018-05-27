@@ -13,7 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApp", "Samples\Examp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{1E887ABD-9AD9-4B80-957B-7F8D875E0003}"
 ProjectSection(SolutionItems) = preProject
-	Src\.nuspec = Src\.nuspec
+	Binaries.nuspec = Binaries.nuspec
+	Sources.nuspec = Sources.nuspec
 EndProjectSection
 EndProject
 Global

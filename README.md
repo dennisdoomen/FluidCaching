@@ -1,17 +1,17 @@
-* The build status is [![Build status](https://ci.appveyor.com/api/projects/status/098rwks5ye15l00q?svg=true)](https://ci.appveyor.com/project/dennisdoomen/fluidcaching)
+[![Build status](https://ci.appveyor.com/api/projects/status/098rwks5ye15l00q?svg=true)](https://ci.appveyor.com/project/dennisdoomen/fluidcaching)
 
 ## Fluid Caching
 
-  _A least recently used cache that you can use without worrying_
+  > A least recently used cache that you can use without worrying
 
 ## What's this?
-At the beginning of this year, I reported on my endeavors to use RavenDB as a projection store for an event sourced system. One of the things I tried to speed up RavenDB's projection speed was to use the [Least Recently Used cache](http://www.codeproject.com/Articles/23396/A-High-Performance-Multi-Threaded-LRU-Cache) developed by [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272) a couple of years ago. This cache gave us a nice speed increase, but the original author appears to be unreachable and seemingly abandoned the project. So I started looking for a way to distribute the code in a way that makes it painless to consume it in other projects. With this in mind, I decided to initiate a new open-source project Fluid Caching. As of August 10th, version 1.0.0 is officially available as a [source-only package on NuGet](https://www.nuget.org/packages/FluidCaching.Sources/1.0.0).
+A while ago, I [ran a test](https://www.continuousimprover.com/2016/01/evaluating-ravendb-as-embedded-database.html) to use RavenDB as a projection store for an event sourced system. One of the things I tried to speed up RavenDB's projection speed was to use the [Least Recently Used cache](http://www.codeproject.com/Articles/23396/A-High-Performance-Multi-Threaded-LRU-Cache) developed by [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272) a couple of years ago. This cache gave us a nice speed increase, but the original author appears to be unreachable and seemingly abandoned the project. So I started looking for a way to distribute the code in a way that makes it painless to consume it in other projects. With this in mind, I decided to initiate a new open-source project Fluid Caching. 
 
 The cache in itself did meet our requirements quite well. It supported putting a limit on its capacity. It allows you to specify the minimum amount of time objects must be kept in the cache (even if that would exceed the capacity), as well as a maximum amount of time. It's completely safe to use in multi-threaded scenarios and is using an algorithm that keeps the performance under control, regardless of the number of items in the cache. It also supports multiple indexes based on different keys on top of the same cache, and is pretty flexible in how you get keys from objects. All credits for the initial implementation go to Brian, and I welcome you to read his original article from 2009 on some of the design choices.
 
-## What does it look like
+## How do I use it?
 
-Considering a User class, in its simplest form, you can use the cache like this:
+Considering a `User` class, in its simplest form, you can use the cache like this:
 
 ```csharp
 var cache = new FluidCache<User>(1000, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10)), () => DateTime.Now);
@@ -29,8 +29,14 @@ The lambda you pass in will be used to extract the key from the User object. Not
 User user = await indexById.GetItem("dennisd", id => Task.FromResult(new User { Id = id }));
 ```
 
-## Why am I doing this
-Good question. It's 2016, so some of the custom thread synchronization primitives are part of the .NET framework these days. Next to that, we all write asynchronous code and thus have a need for support for async/await. These days, being able to compile the code against any modern .NET version, even a Portable Class Library or .NET Core, isn't a luxury either. Other features I'm adding include thread-safe factory methods and some telemetry for tuning the cache to your needs. In terms of code distribution, my preferred method for a library like this would be a source-only NuGet package so that you don't have to bother the consumers of your packages with another dependency. Also, the code quality itself needs some [Object Calisthenics](http://www.continuousimprover.com/2015/10/9-simple-practices-for-writing-better.html) love as well as some sprinkles of my Coding Guidelines. And finally, you can't ship a library without at least a decent amount properly scoped unit tests and a [fully automated build pipeline](http://www.continuousimprover.com/2015/03/bringing-power-of-powershell-to-your.html).
+## Where do I get it?
+It's available in three different forms. 
+* A NuGet package called [FluidCaching.Sources](https://www.nuget.org/packages/FluidCaching.Sources/) that just adds the source code to your project without any binary dependencies. compatible with both projects using the `packages.config` as well as those that use the newer `<PackageReference>` technique.
+* A NuGet package called [FluidCaching](https://www.nuget.org/packages/FluidCaching.Sources/) that adds a .NET Standard 1.1 binary dependency. 
+* A [single source file](https://github.com/dennisdoomen/FluidCaching/releases/latest) that you can directly add to your project.
+
+## Another caching library!? Why?
+Good question. It's 2016, so some of the custom thread synchronization primitives are part of the .NET framework these days. Next to that, we all write asynchronous code and thus have a need for support for async/await. These days, being able to compile the code against any modern .NET version, even a .NET Standard or .NET Core project, isn't a luxury either. Other features I'm adding include thread-safe factory methods and some telemetry for tuning the cache to your needs. In terms of code distribution, my preferred method for a library like this would be a source-only NuGet package so that you don't have to bother the consumers of your packages with another dependency. Also, the code quality itself needs some [Object Calisthenics](https://www.continuousimprover.com/2015/10/9-simple-practices-for-writing-better.html) love as well as some sprinkles of my [Coding Guidelines](http://csharpcodingguidelines.com). And finally, you can't ship a library without at least a decent amount of properly scoped unit tests and a [fully automated build pipeline](https://www.continuousimprover.com/2015/03/bringing-power-of-powershell-to-your.html).
 
 ## So how does it work
 As I mentioned before, I highly recommend the original article if you want to understand some of the design decisions, but let me share some of the inner workings right now. The `FluidCache` class is the centerpiece of the solution. It's more of a factory for other objects than a cache per see. Instead, all items in the cache are owned by the `LifeSpanManager`. Its responsibility is to track when item has been 'touched' and use that to calculate when it is eligible for garbage collection while accounting for the provided minimum age.

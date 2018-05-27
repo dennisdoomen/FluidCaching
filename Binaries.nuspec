@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata minClientVersion="3.3.0">
+    <id>FluidCaching</id>
+    <title>FluidCaching</title>
+    <version>1.2.1-supportpackagere0001</version>
+    <owners>Dennis Doomen</owners>
+    <authors>Dennis Doomen</authors>
+    <summary>
+      A multi-threaded high performance Least Recently Used cache with async/await support, compiled for .NET Standard 1.1.
+    </summary>
+    <description>
+      A multi-threaded high performance Least Recently Used cache with async/await support, compiled for .NET Standard 1.1.
+	  Read https://www.continuousimprover.com/2016/02/a-least-recently-used-cache-that-you.html for some background information.
+    </description>
+    <language>en-US</language>
+    <licenseUrl>https://github.com/dennisdoomen/FluidCaching</licenseUrl>
+    <projectUrl>https://github.com/dennisdoomen/FluidCaching</projectUrl>
+    <tags>LRU Caching</tags>
+    <copyright>Copyright Dennis Doomen 2015-2018</copyright>
+    <releaseNotes>
+      See https://github.com/dennisdoomen/FluidCaching/releases
+    </releaseNotes>
+  </metadata>
+  <files>
+    <file src=".\Src\FluidCaching\bin\Release\netstandard1.1\*.*" exclude="**\*.json" target="lib\netstandard1.1" />
+  </files>
+</package>
