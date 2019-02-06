@@ -46,7 +46,7 @@ namespace FluidCaching
                 {
                     if (Bag == null)
                     {
-                        // if node.AgeBag==null then the object is not currently managed by LifespanMgr so add it
+                        // if Bag is null, then the object is not currently managed by the life span manager
                         Next = manager.AddToHead(this);
                     }
                 }

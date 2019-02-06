@@ -13,13 +13,13 @@ namespace FluidCaching
         interface IIndex<TKey, T> where T : class
     {
         /// <summary>
-        /// Getter for index
+        /// Gets an object from the index based on the provided <paramref name="key"/> or tries to create a new one using the
+        /// (optional) factory method provided by <paramref name="createItem"/>
         /// </summary>
-        /// <param name="key">key to find (or load if needed)</param>
-        /// <param name="createItem">
-        /// An optional delegate that is used to create the actual object if it doesn't exist in the cache.
-        /// </param>
-        /// <returns>the object value associated with the cache</returns>
+        /// <returns>
+        /// Returns the object associated with the key or <c>null</c> if no such object exists and
+        /// the <paramref name="createItem"/> was <c>null</c> or returned a <c>null</c>.
+        /// </returns>
         Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null);
 
         /// <summary>Delete object that matches key from cache</summary>

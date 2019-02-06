@@ -67,11 +67,19 @@ namespace FluidCaching
             return indexList.TryGetValue(indexName, out index) ? index as IIndex<TKey, T> : null;
         }
 
-        /// <summary>Retrieve a object by index name / key</summary>
-        public Task<T> Get<TKey>(string indexName, TKey key, ItemCreator<TKey, T> item = null)
+        /// <summary>
+        /// Gets an object associated with <paramref name="key"/> from the index identified by <paramref name="indexName"/>
+        /// or tries to create a new one using the
+        /// (optional) factory method provided by <paramref name="createItem"/>
+        /// </summary>
+        /// <returns>
+        /// Returns the object associated with the key or <c>null</c> if no such object exists and
+        /// the <paramref name="createItem"/> was <c>null</c> or returned a <c>null</c>.
+        /// </returns>
+        public Task<T> Get<TKey>(string indexName, TKey key, ItemCreator<TKey, T> createItem = null)
         {
             IIndex<TKey, T> index = GetIndex<TKey>(indexName);
-            return index?.GetItem(key, item);
+            return index?.GetItem(key, createItem);
         }
 
         /// <summary>Adds a new index to the cache</summary>
