@@ -6,8 +6,8 @@ namespace FluidCaching
     internal interface IIndexManagement<T> where T : class
     {
         void ClearIndex();
-        bool AddItem(INode<T> item);
-        INode<T> FindItem(T item);
+        bool AddItem(Node<T> item);
+        Node<T> FindItem(T item);
         int RebuildIndex();
     }
 }

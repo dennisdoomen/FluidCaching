@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace FluidCaching
 {
-    internal class LifespanManager<T> : IEnumerable<INode<T>> where T : class
+    internal class LifespanManager<T> : IEnumerable<Node<T>> where T : class
     {
         /// <summary>
         /// The number of bags which should be enough to store the requested capacity of items. The heuristic is that each
@@ -255,7 +255,7 @@ namespace FluidCaching
         }
 
         /// <summary>Create item enumerator</summary>
-        public IEnumerator<INode<T>> GetEnumerator()
+        public IEnumerator<Node<T>> GetEnumerator()
         {
             for (int bagNumber = CurrentBagIndex; bagNumber >= OldestBagIndex; --bagNumber)
             {
