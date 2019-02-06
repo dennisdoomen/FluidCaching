@@ -102,14 +102,14 @@ namespace FluidCaching
         /// <summary>
         /// AddAsNode an item to the cache
         /// </summary>
-        internal INode<T> AddAsNode(T item)
+        internal Node<T> AddAsNode(T item)
         {
             if (item == null)
             {
                 return null;
             }
 
-            INode<T> node = FindExistingNode(item);
+            Node<T> node = FindExistingNode(item);
 
             // dupl is used to prevent total count from growing when item is already in indexes (only new Nodes)
             bool isDuplicate = (node != null) && (node.Value == item);
@@ -143,9 +143,9 @@ namespace FluidCaching
             return node;
         }
 
-        private INode<T> FindExistingNode(T item)
+        private Node<T> FindExistingNode(T item)
         {
-            INode<T> node = null;
+            Node<T> node = null;
             foreach (KeyValuePair<string, IIndexManagement<T>> keyValue in indexList)
             {
                 if ((node = keyValue.Value.FindItem(item)) != null)

@@ -5,7 +5,7 @@ namespace FluidCaching
     /// <summary>
     /// Represents a node in a linked list of items. 
     /// </summary>
-    internal class Node<T> : INode<T> where T : class
+    internal class Node<T> where T : class
     {
         private readonly LifespanManager<T> manager;
 

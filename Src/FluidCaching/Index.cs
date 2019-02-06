@@ -13,7 +13,7 @@ namespace FluidCaching
     {
         private readonly FluidCache<T> owner;
         private readonly LifespanManager<T> lifespanManager;
-        private Dictionary<TKey, WeakReference<INode<T>>> index;
+        private Dictionary<TKey, WeakReference<Node<T>>> index;
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemCreator<TKey, T> loadItem;
         private readonly IEqualityComparer<TKey> keyEqualityComparer;
@@ -49,7 +49,7 @@ namespace FluidCaching
         /// <returns>the object value associated with key, or null if not found or could not be loaded</returns>
         public async Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null)
         {
-            INode<T> node = FindExistingNodeByKey(key);
+            Node<T> node = FindExistingNodeByKey(key);
             node?.Touch();
 
             ItemCreator<TKey, T> creator = createItem ?? loadItem;
@@ -83,7 +83,7 @@ namespace FluidCaching
         /// <param name="key"></param>
         public void Remove(TKey key)
         {
-            INode<T> node = FindExistingNodeByKey(key);
+            Node<T> node = FindExistingNodeByKey(key);
             if (node != null)
             {
                 lock (this)
@@ -100,15 +100,15 @@ namespace FluidCaching
         }
 
         /// <summary>try to find this item in the index and return Node</summary>
-        public INode<T> FindItem(T item)
+        public Node<T> FindItem(T item)
         {
             return FindExistingNodeByKey(_getKey(item));
         }
 
-        private INode<T> FindExistingNodeByKey(TKey key)
+        private Node<T> FindExistingNodeByKey(TKey key)
         {
-            WeakReference<INode<T>> reference;
-            INode<T> node;
+            WeakReference<Node<T>> reference;
+            Node<T> node;
             if (index.TryGetValue(key, out reference) && reference.TryGetTarget(out node))
             {
                 lifespanManager.Stats.RegisterHit();
@@ -132,16 +132,16 @@ namespace FluidCaching
         /// <returns>
         /// Returns <c>true</c> if the item could be added to the index, or <c>false</c> otherwise.
         /// </returns>
-        public bool AddItem(INode<T> item)
+        public bool AddItem(Node<T> item)
         {
             lock (this)
             {
                 TKey key = _getKey(item.Value);
 
-                INode<T> node;
+                Node<T> node;
                 if (!index.ContainsKey(key) || !index[key].TryGetTarget(out node) || node.Value == null)
                 {
-                    index[key] = new WeakReference<INode<T>>(item, trackResurrection: false);
+                    index[key] = new WeakReference<Node<T>>(item, trackResurrection: false);
                     return true;
                 }
 
@@ -156,9 +156,9 @@ namespace FluidCaching
             {
                 // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
                 var keyValues = lifespanManager
-                    .ToDictionary(item => _getKey(item.Value), item => new WeakReference<INode<T>>(item));
+                    .ToDictionary(item => _getKey(item.Value), item => new WeakReference<Node<T>>(item));
 
-                index = new Dictionary<TKey, WeakReference<INode<T>>>(keyValues, keyEqualityComparer);
+                index = new Dictionary<TKey, WeakReference<Node<T>>>(keyValues, keyEqualityComparer);
                 return index.Count;
             }
         }
