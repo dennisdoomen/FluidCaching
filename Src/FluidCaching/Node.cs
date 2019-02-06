@@ -8,6 +8,7 @@ namespace FluidCaching
     internal class Node<T> where T : class
     {
         private readonly LifespanManager<T> manager;
+        private readonly object syncObject = new object();
 
         /// <summary>constructor</summary>
         public Node(LifespanManager<T> manager, T value)
@@ -41,7 +42,7 @@ namespace FluidCaching
         {
             if (Bag == null)
             {
-                lock (this)
+                lock (syncObject)
                 {
                     if (Bag == null)
                     {
@@ -59,7 +60,7 @@ namespace FluidCaching
         {
             if ((Bag != null) && (Value != null))
             {
-                lock (this)
+                lock (syncObject)
                 {
                     if ((Bag != null) && (Value != null))
                     {
