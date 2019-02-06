@@ -44,11 +44,38 @@ namespace FluidCaching
 
         public async Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null)
         {
-            Node<T> node = FindExistingNodeByKey(key);
-            node?.Touch();
+            T value = null;
+            
+            lock (syncObject)
+            {
+                Node<T> node = FindExistingNodeByKey(key);
+                if (node != null)
+                {
+                    value = node.Value;
 
+                    node.Touch();
+                }
+            }
+
+            if (value == null)
+            {
+                value = await TryCreate(key, createItem);
+                if (value != null)
+                {
+                    Node<T> newOrExistingNode = owner.TryAddAsNode(value);
+                    value = newOrExistingNode.Value;
+
+                    lifespanManager.CheckValidity();
+                }
+            }
+
+            return value;
+        }
+
+        private async Task<T> TryCreate(TKey key, ItemCreator<TKey, T> createItem = null)
+        {
             ItemCreator<TKey, T> creator = createItem ?? loadItem;
-            if ((node?.Value == null) && (creator != null))
+            if (creator != null)
             {
                 Task<T> task = creator(key);
                 if (task == null)
@@ -57,21 +84,10 @@ namespace FluidCaching
                         "Expected a non-null Task. Did you intend to return a null-returning Task instead?");
                 }
 
-                T value = await task;
-
-                lock (syncObject)
-                {
-                    node = FindExistingNodeByKey(key);
-                    if (node?.Value == null)
-                    {
-                        node = owner.AddAsNode(value);
-                    }
-
-                    lifespanManager.CheckValidity();
-                }
+                return await task;
             }
 
-            return node?.Value;
+            return null;
         }
 
         /// <summary>Delete object that matches key from cache</summary>
