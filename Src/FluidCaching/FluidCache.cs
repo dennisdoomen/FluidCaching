@@ -34,7 +34,8 @@ namespace FluidCaching
     {
         private readonly Dictionary<string, IIndexManagement<T>> indexList = new Dictionary<string, IIndexManagement<T>>();
         private readonly LifespanManager<T> lifeSpan;
-
+        private readonly object syncObject = new object();
+        
         /// <summary>Constructor</summary>
         /// <param name="capacity">the normal item limit for cache (Count may exeed capacity due to minAge)</param>
         /// <param name="minAge">the minimium time after an access before an item becomes eligible for removal, during this time
@@ -125,7 +126,7 @@ namespace FluidCaching
                     }
                 }
 
-                lock (this)
+                lock (syncObject)
                 {
                     if (!isDuplicate)
                     {

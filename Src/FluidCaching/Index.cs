@@ -17,7 +17,8 @@ namespace FluidCaching
         private readonly GetKey<T, TKey> _getKey;
         private readonly ItemCreator<TKey, T> loadItem;
         private readonly IEqualityComparer<TKey> keyEqualityComparer;
-
+        private readonly object syncObject = new object();
+        
         /// <summary>constructor</summary>
         /// <param name="owner">parent of index</param>
         /// <param name="lifespanManager"></param>
@@ -64,7 +65,7 @@ namespace FluidCaching
 
                 T value = await task;
 
-                lock (this)
+                lock (syncObject)
                 {
                     node = FindExistingNodeByKey(key);
                     if (node?.Value == null)
@@ -86,7 +87,7 @@ namespace FluidCaching
             Node<T> node = FindExistingNodeByKey(key);
             if (node != null)
             {
-                lock (this)
+                lock (syncObject)
                 {
                     node = FindExistingNodeByKey(key);
                     if (node != null)
@@ -121,7 +122,7 @@ namespace FluidCaching
         /// <summary>Remove all items from index</summary>
         public void ClearIndex()
         {
-            lock (this)
+            lock (syncObject)
             {
                 index.Clear();
             }
@@ -134,7 +135,7 @@ namespace FluidCaching
         /// </returns>
         public bool AddItem(Node<T> item)
         {
-            lock (this)
+            lock (syncObject)
             {
                 TKey key = _getKey(item.Value);
 
@@ -152,7 +153,7 @@ namespace FluidCaching
         /// <summary>removes all items from index and reloads each item (this gets rid of dead nodes)</summary>
         public int RebuildIndex()
         {
-            lock (this)
+            lock (syncObject)
             {
                 // Create a new ConcurrentDictionary, this way there is no need for locking the index itself
                 var keyValues = lifespanManager

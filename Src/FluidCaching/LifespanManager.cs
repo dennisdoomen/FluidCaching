@@ -40,6 +40,7 @@ namespace FluidCaching
         internal int itemsInCurrentBag;
         private int currentBagIndex;
         private int oldestBagIndex;
+        private readonly object syncObject = new object();
 
         public LifespanManager(FluidCache<T> owner, int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow)
         {
@@ -74,7 +75,7 @@ namespace FluidCaching
         {
             // NOTE: Monitor.Enter(this) / Monitor.Exit(this) is the same as lock(this)... We are using Monitor.TryEnter() because it
             // does not wait for a lock, if lock is currently held then skip and let next Touch perform cleanup.
-            if (RequiresCleanup && Monitor.TryEnter(this))
+            if (RequiresCleanup && Monitor.TryEnter(syncObject))
             {
                 try
                 {
@@ -93,7 +94,7 @@ namespace FluidCaching
                 }
                 finally
                 {
-                    Monitor.Exit(this);
+                    Monitor.Exit(syncObject);
                 }
             }
         }
@@ -111,7 +112,7 @@ namespace FluidCaching
         /// </remarks>
         private void CleanUp(DateTime now)
         {
-            lock (this)
+            lock (syncObject)
             {
                 int itemsAboveCapacity = Stats.Current - Stats.Capacity;
                 AgeBag<T> bag = bags[OldestBagIndex];
@@ -209,7 +210,7 @@ namespace FluidCaching
         /// <summary>Remove all items from LifespanMgr and reset</summary>
         public void Clear()
         {
-            lock (this)
+            lock (syncObject)
             {
                 bags.Empty();
 
@@ -223,7 +224,7 @@ namespace FluidCaching
         /// <summary>ready a new current AgeBag for use and close the previous one</summary>
         private void OpenBag(int bagNumber)
         {
-            lock (this)
+            lock (syncObject)
             {
                 DateTime now = getNow();
 
@@ -273,7 +274,7 @@ namespace FluidCaching
 
         public Node<T> AddToHead(Node<T> node)
         {
-            lock (this)
+            lock (syncObject)
             {
                 Node<T> next = CurrentBag.First;
                 CurrentBag.First = node;
