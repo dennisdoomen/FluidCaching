@@ -105,13 +105,13 @@ namespace FluidCaching
         /// </summary>
         public void Add(T item)
         {
-            AddAsNode(item);
+            TryAddAsNode(item);
         }
 
         /// <summary>
         /// AddAsNode an item to the cache
         /// </summary>
-        internal Node<T> AddAsNode(T item)
+        internal Node<T> TryAddAsNode(T item)
         {
             if (item == null)
             {

@@ -29,12 +29,15 @@ namespace FluidCaching
         /// </summary>
         public void Touch()
         {
-            if ((Value != null) && (Bag != manager.CurrentBag))
+            lock (syncObject)
             {
-                RegisterWithLifespanManager();
+                if ((Value != null) && (Bag != manager.CurrentBag))
+                {
+                    RegisterWithLifespanManager();
 
-                Bag = manager.CurrentBag;
-                Interlocked.Increment(ref manager.itemsInCurrentBag);
+                    Bag = manager.CurrentBag;
+                    Interlocked.Increment(ref manager.itemsInCurrentBag);
+                }
             }
         }
 
