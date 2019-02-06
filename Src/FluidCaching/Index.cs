@@ -42,12 +42,6 @@ namespace FluidCaching
             RebuildIndex();
         }
 
-        /// <summary>Getter for index</summary>
-        /// <param name="key">key to find (or load if needed)</param>
-        /// <param name="createItem">
-        /// An optional factory method for creating the item if it does not exist in the cache.
-        /// </param>
-        /// <returns>the object value associated with key, or null if not found or could not be loaded</returns>
         public async Task<T> GetItem(TKey key, ItemCreator<TKey, T> createItem = null)
         {
             Node<T> node = FindExistingNodeByKey(key);

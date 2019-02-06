@@ -233,12 +233,12 @@ namespace FluidCaching.Specs
             }
         }
 
-        public class When_an_item_doesnt_exist_in_the_cache_and_the_factory_returns_a_null_task : GivenWhenThen<Func<Task>>
+        public class When_an_item_does_not_exist_in_the_cache_and_the_factory_returns_a_null_task : GivenWhenThen<Func<Task>>
         {
             private IIndex<string, User> indexById;
             private FluidCache<User> cache;
 
-            public When_an_item_doesnt_exist_in_the_cache_and_the_factory_returns_a_null_task()
+            public When_an_item_does_not_exist_in_the_cache_and_the_factory_returns_a_null_task()
             {
                 Given(() =>
                 {
