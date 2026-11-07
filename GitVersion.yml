@@ -1,0 +1,13 @@
+workflow: GitFlow/v1
+commit-message-incrementing: Disabled
+branches:
+  release:
+    label: rc
+    prevent-increment:
+      when-current-commit-tagged: true
+  pull-request:
+    regex: ((pull|pull\-requests|pr)[/-]|[/-](merge))
+    label: pr
+  hotfix:
+    prevent-increment:
+      when-current-commit-tagged: true

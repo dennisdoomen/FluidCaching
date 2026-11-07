@@ -1,0 +1,85 @@
+[*.cs]
+
+# Purpose: Do not nest type GetProperties. 
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1034.severity = none
+
+# Purpose: Modify code to catch a more specific allowed exception type, or rethrow the exceptio
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1031.severity = none
+
+# Purpose: Specify StringComparison for clarity
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1307.severity = none
+
+# Purpose: The behavior of 'string. StartsWith(string)' could vary based on the current user's locale settings
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1310.severity = none
+
+# Purpose: Type is a static holder type but is neither static nor NotInheritable
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1052.severity = none
+
+# Purpose: Remove the underscores from member name
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1707.severity = none
+
+# Purpose: Identifiers should not have incorrect suffix
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1711.severity = none
+
+# Purpose: Member 'Method' does not access instance data and can be marked as stati
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1822.severity = none
+
+# Purpose: Type 'SuperClass' can be sealed
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA1852.severity = none
+
+# Purpose: Call System.IDisposable.Dispose on object
+# Reason: We don't care about this in tests
+dotnet_diagnostic.CA2000.severity = none
+
+# Purpose: XML comment analysis is disabled due to project configuration
+# Reason: We don't need the documentation from the tests
+dotnet_diagnostic.SA0001.severity = none
+
+# Purpose: Elements must be documented
+# Reason: Not needed for tests
+dotnet_diagnostic.SA1600.severity = none
+
+# Purpose: Field should be private
+# Reason: Not needed for tests
+dotnet_diagnostic.SA1401.severity = none
+
+# Purpose: Make class static
+# Reason: Not needed for tests
+dotnet_diagnostic.RCS1102.severity = none
+
+# Purpose: Type contains the word 'and'
+# Reason: Not needed for tests
+dotnet_diagnostic.AV1000.severity = none
+
+# Purpose: Type hides inherited member
+# Reason: Not needed for tests
+dotnet_diagnostic.AV1010.severity = none
+
+# Purpose: Parameter 'flag' is of type 'bool
+# Reason: Not needed for tests
+dotnet_diagnostic.AV1564.severity = none
+
+# Purpose: Use an overload of 'StartsWith' that has a StringComparison parameter
+# Reason: Duplicate of CA1310
+dotnet_diagnostic.MA0074.severity = none
+
+# Purpose: Class is never instantiated (non-private accessibility)
+# Reason: We don't instantiate test classes directly
+resharper_class_never_instantiated_global_highlighting=none
+
+# Purpose: Types can be made internal
+# Reason: xUnit requires test classes to be public
+dotnet_diagnostic.CA1515.severity = none
+
+# Purpose: Captured variable is modified in the outer scope
+# Reason: Tests change a captured clock variable on purpose to simulate the passing of time
+resharper_access_to_modified_closure_highlighting = none

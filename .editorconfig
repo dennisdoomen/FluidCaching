@@ -1,0 +1,424 @@
+root = true
+# EditorConfig is awesome: http://EditorConfig.org
+
+####################################################################
+## Global settings
+####################################################################
+
+[*]
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Xml project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_style = space
+indent_size = 2
+
+# Xml config files
+[*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
+indent_style = space
+indent_size = 2
+
+[*.{md,json}]
+indent_style = space
+indent_size = 4
+
+[*.cs]
+indent_style = space
+indent_size = 4
+max_line_length = 130
+
+# New line preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation preferences
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+
+# avoid this. unless absolutely necessary
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# only use var when it's obvious what the variable type is
+csharp_style_var_for_built_in_types = false:none
+csharp_style_var_when_type_is_apparent = false:none
+csharp_style_var_elsewhere = false:suggestion
+
+# use language keywords instead of BCL types
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+dotnet_style_predefined_type_for_member_access = true:error
+
+# name all constant fields using PascalCase
+dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.constant_fields_should_be_pascal_case.symbols  = constant_fields
+dotnet_naming_rule.constant_fields_should_be_pascal_case.style    = pascal_case_style
+
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+# Code style defaults
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# Expression-level preferences
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = true:none
+csharp_style_expression_bodied_constructors = false:none
+csharp_style_expression_bodied_operators = false:none
+csharp_style_expression_bodied_properties = true:none
+csharp_style_expression_bodied_indexers = true:none
+csharp_style_expression_bodied_accessors = true:none
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:error
+csharp_style_pattern_matching_over_as_with_null_check = true:error
+csharp_style_inlined_variable_declaration = true:error
+
+# Null checking preferences
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+dotnet_style_readonly_field = true:error
+
+# Space preferences
+csharp_space_after_cast = false
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_between_square_brackets = false
+
+####################################################################
+## Rider/ReSharper Settings
+####################################################################
+
+# Keep enough blank lines between code blocks to make it readable.
+resharper_blank_lines_after_multiline_statements = 1
+resharper_blank_lines_around_single_line_auto_property = 1
+resharper_blank_lines_before_case = 1
+
+# Purpose: Don't put elements of an array on new lines, unless the length exceeds the maximum line length.
+resharper_wrap_array_initializer_style = chop_always
+
+# Purpose: Always put elements of an object initializer on new lines, unless the length exceeds the maximum line length.
+resharper_wrap_object_and_collection_initializer_style = chop_always
+
+resharper_unused_parameter_local_highlighting = error
+resharper_not_accessed_positional_property_global_highlighting = error
+
+# Do not remove redundant else blocks
+resharper_redundant_if_else_block_highlighting = none
+
+# If we use explicit property names in anonymous types, we do that on purpose.
+resharper_redundant_anonymous_type_property_name_highlighting = none
+
+# Public API methods in a library may only be called from external consumers not visible to InspectCode's global analysis.
+resharper_member_can_be_private_global_highlighting = none
+
+# Fluent builder methods intentionally return 'this' to allow optional chaining; not using the return value is valid.
+resharper_unused_method_return_value_global_highlighting = none
+
+####################################################################
+## Roslyn Analyzers and Code Fixes
+####################################################################
+
+# Purpose: Field contains the word 'and', which suggests doing multiple thing
+# Rationale: We do not want to enforce this rule in our codebase.
+dotnet_diagnostic.AV1115.severity = suggestion
+
+# Purpose: Return interfaces to unchangeable collections
+# Rationale: We do not want to enforce this rule in our codebase.
+dotnet_diagnostic.AV1130.severity = suggestion
+
+# Purpose: null is returned from method which has return type of string, collection or task
+# Rationale: It's a good suggestion, but can be hard to implement.
+dotnet_diagnostic.AV1135.severity = suggestion
+
+# Purpose contains x statements, which exceeds the maximum of 7 statements
+# Rationale: 7 is the ideal Clean Code value, 15 is what we think is reasonable, 40 is the absolute maximum.
+dotnet_diagnostic.AV1500.max_statement_count = 40
+dotnet_diagnostic.AV1500.severity = error
+
+# Purpose: Loop statement contains nested loop
+# Rationale: We don't want to completely prevent this.
+dotnet_diagnostic.AV1532.severity = suggestion
+
+# Purpose: Overloaded method should call another overload
+# Rationale: Does often lead to more complex code
+dotnet_diagnostic.AV1551.severity = suggestion
+
+# Parameter is invoked with a named argument
+# Rationale: We do not want to enforce this rule in our codebase.
+dotnet_diagnostic.AV1555.severity = none
+
+# Purpose: Don’t declare signatures with more than 3 parameters
+# Rationale: 3 is the ideal number of parameters for a method, but more than 5 in a constructor is a problem
+dotnet_diagnostic.AV1561.max_parameter_count = 5
+dotnet_diagnostic.AV1561.max_constructor_parameter_count = 8
+dotnet_diagnostic.AV1561.severity = error
+
+# Purpose: Argument for parameter calls nested method
+# Rationale: Modern debuggers allow stepping into nested calls, so no need to avoid them.
+dotnet_diagnostic.AV1580.severity = none
+
+# Purpose: Parameter 'x' should have a more descriptive name
+# Rationale: Not always useful
+dotnet_diagnostic.AV1706.severity = suggestion
+
+# Purpose: Field contains the name of its containing type
+# Rationale: It's not smart enough to understand that CustomFormatters is not the same as Formatter
+dotnet_diagnostic.AV1710.severity = suggestion
+
+# Purpose: Name of async method
+# Rationale: We prefer to only use the "Async" suffix if a synchronous and asynchronous version of the method exists.
+dotnet_diagnostic.AV1755.severity = none
+
+# Purpose: Replace call to Nullable<T>.HasValue with null check
+# Rationale: Should be a suggestion, not an error
+dotnet_diagnostic.AV2202.severity = suggestion
+
+# Purpose: Missing XML comment for internally visible type or member
+# Rationale: We do not want to enforce this rule in our codebase.
+dotnet_diagnostic.AV2305.severity = suggestion
+
+# Purpose: Consider making 'RaiseXXX' an event
+# Rationale: Should only be a suggestion
+dotnet_diagnostic.CA1030.severity = suggestion
+
+# Purpose: Change the type of property 'from 'string' to 'System.Uri'
+# Rationale: Not a bad idea, but not always practical in existing codebases.
+dotnet_diagnostic.CA1056.severity = suggestion
+
+# Purpose: In externally visible method  validate parameter 'formattedGraph' is non-null before using it.
+# Rationale: Not a bad idea, but not always practical in existing codebases.
+dotnet_diagnostic.CA1062.severity = suggestion
+
+# Purpose: Method passes a literal string as parameter
+# Rationale: Very specific rule for localizable applications
+dotnet_diagnostic.CA1303.severity = suggestion
+
+# Purpose: The behavior of StringBuilder.Append could vary based on the current user's locale settings.
+# Rationale: We don't want to force this in all cases
+dotnet_diagnostic.CA1305.severity = suggestion
+
+# Purpose: Rename virtual/interface member so that it no longer conflicts with the reserved language keyword 'Throw'.
+# Rationale: We only support C#
+dotnet_diagnostic.CA1716.severity = none
+
+# Purpose: Properties should not return arrays
+# Rationale: Although returning arrays has some performance implications, we don't want to force this.
+dotnet_diagnostic.CA1819.severity = suggestion
+
+# Purpose: Use concrete types when possible for improved performance
+# Rationale: Does not need to be enforced in all cases, especially when using interfaces creates less coupling
+dotnet_diagnostic.CA1859.severity = suggestion
+
+# Purpose: Use Task.ConfigureAwait(false) if the current SynchronizationContext is not needed
+# Rationale: Not relevant for .NET Core web applications.
+dotnet_diagnostic.CA2007.severity = none
+
+# Purpose: Pass System.Uri objects instead of strings
+# Rationale: Although nice to have, this rule is not always practical in existing codebases.
+dotnet_diagnostic.CA2234.severity = suggestion
+
+# Purpose: Use an overload that has a IEqualityComparer<string> or IComparer<string> parameter
+# Reason: Not needed for tests
+dotnet_diagnostic.MA0002.severity = none
+
+# Purpose: Use string.Equals instead of Equals operator
+# Rationale: Does not improve readability
+dotnet_diagnostic.MA0006.severity = none
+
+# Purpose: Regular expressions should not be vulnerable to Denial of Service attacks
+# Rationale: See https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0009.md
+dotnet_diagnostic.MA0009.severity = suggestion
+
+# Purpose: Use an overload of 'System.ArgumentException' with the parameter name
+# Rationale: We don't want to force this
+dotnet_diagnostic.MA0015.severity = suggestion
+
+# Purpose: Use an explicit StringComparer to compute hash codes
+# Rationale: Too farfetched
+dotnet_diagnostic.MA0021.severity = suggestion
+
+# Purpose: Closing parenthesis should not be preceded by a space
+# Rationale: This conflicts with record constructors
+dotnet_diagnostic.SA1009.severity = none
+
+# Purpose: Code should not contain trailing whitespace
+# Rationale: We don't want to force this.
+dotnet_diagnostic.SA1028.severity = none
+
+# Purpose: Prefix local calls with this
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1101.severity = none
+
+# Purpose: Generic type constraints should be on their own line
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1127.severity = none
+
+# Purpose: Ordering rules
+# Rationale: We prefer to order members so we can read code like a book
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1204.severity = none
+
+# Purpose: The parameters should begin on the line after the declaration, whenever the parameter span across multiple lines
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1116.severity = none
+
+# Purpose: The parameters should all be placed on the same line or each parameter should be placed on its own lin
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1117.severity = none
+
+# Purpose: Use string.Empty for empty string
+# Rationale: There is no performance difference in modern .NET versions, so no need to enforce this.
+dotnet_diagnostic.SA1122.severity = none
+
+# Purpose: Do not use region
+# Rationale: Is up to the developer to decide if they want to use regions or not.
+dotnet_diagnostic.SA1124.severity = none
+
+# Purpose: Variable '_' should begin with lower-case lette
+# Rationale: Does not understand discard parameters
+dotnet_diagnostic.SA1312.severity = none
+
+# Purpose: Parameter '_' should begin with lower-case lette
+# Rationale: Does not understand discard parameters
+dotnet_diagnostic.SA1313.severity = none
+
+# Purpose: File may only contain a single type
+# Rationale: Although we prefer to have one type per file, we don't want to force this.
+dotnet_diagnostic.SA1402.severity = suggestion
+
+# Purpose: Code analysis suppression should have justification
+# Rationale: If we do it, we have reasons for it.
+dotnet_diagnostic.SA1404.severity = none
+
+# Purpose: Use trailing comma in multi-line initialize
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1413.severity = none
+
+# Purpose: A closing brace should not be preceded by a blank line
+# Rationale: We don't care
+dotnet_diagnostic.SA1508.severity = none
+
+# Purpose: File is required to end with a single newline character (
+# Rationale: We don't care
+dotnet_diagnostic.SA1518.severity = none
+
+# Purpose: Elements should be documented
+# Rationale: We don't want to force documentation for all elements
+dotnet_diagnostic.SA1600.severity = suggestion
+
+# Purpose: Partial elements should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1601.severity = suggestion
+
+# Purpose: Enumeration items should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1602.severity = suggestion
+
+# Purpose: Element parameters should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1611.severity = suggestion
+
+# Purpose: The parameter documentation for 'because' should be at position 3
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1612.severity = suggestion
+
+# Purpose: Element return value should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1615.severity = suggestion
+
+# Purpose: Generic type parameters should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1618.severity = suggestion
+
+# Purpose: Element return value should be documented
+# Rationale: We don't want to force this
+dotnet_diagnostic.sa1622.severity = suggestion
+
+# Purpose: The property's documentation summary text should begin with: 'Gets or sets'
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1623.severity = suggestion
+
+# Purpose: Property summary documentation should begin with standard text
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1624.severity = suggestion
+
+# Purpose: Documentation text should end with a period
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1629.severity = none
+
+# Purpose: The file header is missing or not located at the top of the file
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1633.severity = none
+
+# Purpose: Constructor summary documentation should begin with standard text
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1642.severity = none
+
+# Purpose: File name should match first type name
+# Rationale: To keep the content-only package simple, we keep everything together
+dotnet_diagnostic.SA1649.severity = none
+
+# Purpose: Use file header
+# Rationale: We don't want to force this
+dotnet_diagnostic.SA1633.severity = none
+
+####################################################################
+## Duplicate rules
+####################################################################
+
+dotnet_diagnostic.AV1210.severity = none # duplicate of CA1031
+dotnet_diagnostic.AV2407.severity = none # duplicate of SA1124
+dotnet_diagnostic.CA1050.severity = none # duplicate of MA0047 (which is more explanatory)
+dotnet_diagnostic.MA0004.severity = none # duplicate of CA2007
+dotnet_diagnostic.MA0011.severity = none # duplicate of CA1305
+dotnet_diagnostic.MA0051.severity = none # duplicate of AV1500
+dotnet_diagnostic.MA0069.severity = none # duplicate of CA2211
+dotnet_diagnostic.RCS1102.severity = none # duplicate of CA1052
+dotnet_diagnostic.RCS1188.severity = none # duplicate of CA1805
+dotnet_diagnostic.RCS1194.severity = none # duplicate of CA1032
+dotnet_diagnostic.RCS1075.severity = none # duplicate of CA1031
+dotnet_diagnostic.SA1401.severity = none # duplicate of CA1051
+dotnet_diagnostic.MA0048.severity = none # duplicate of SA1649

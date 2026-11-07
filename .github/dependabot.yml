@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Verify.DiffPlex 3.4.0+ is deprecated and pulls in Verify 33+, which requires a SponsorCheck license
+      - dependency-name: "Verify.DiffPlex"
+        versions:
+          - ">= 3.4.0"
+      - dependency-name: "Verify.XunitV3"
+        versions:
+          - ">= 33.0.0"

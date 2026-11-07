@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    This project only exists to compile, test and analyze the code. The NuGet package is content-only: it ships the
+    C# files in this folder (see .nuspec), so that consumers compile them into their own assembly. Without the
+    FLUIDCACHING_COMPILE symbol, all types are internal and marked as embedded.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net47</TargetFrameworks>
+    <!-- The C# files are shipped as source code, so we make sure they compile with C# 10 -->
+    <LangVersion>10</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <AssemblyName>FluidCaching</AssemblyName>
+    <RootNamespace>FluidCaching</RootNamespace>
+    <DefineConstants>$(DefineConstants);FLUIDCACHING_COMPILE</DefineConstants>
+    <NuSpecFile>.nuspec</NuSpecFile>
+    <NuspecProperties>version=$(Version);year=$([System.DateTime]::Now.ToString(yyyy))</NuspecProperties>
+  </PropertyGroup>
+
+  <ItemGroup Label="Internals visible to">
+    <InternalsVisibleTo Include="FluidCaching.Specs" />
+  </ItemGroup>
+
+</Project>

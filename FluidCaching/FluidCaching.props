@@ -1,0 +1,8 @@
+<!-- Make sure the FluidCaching source code files are excluded from the Solution Explorer in the project that uses this package -->
+<Project>
+  <ItemGroup>
+    <Compile Update="@(Compile)">
+      <Visible Condition="'%(NuGetItemType)' == 'Compile' and '%(NuGetPackageId)' == 'FluidCaching'">false</Visible>
+    </Compile>
+  </ItemGroup>
+</Project>

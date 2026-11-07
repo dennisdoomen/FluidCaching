@@ -1,0 +1,44 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FluidCaching.Specs")]
+namespace FluidCaching
+{
+    public class CacheStats
+    {
+        public CacheStats(int capacity, int nrBags, int bagItemLimit, System.TimeSpan minAge, System.TimeSpan maxAge, System.TimeSpan validatyCheckInterval) { }
+        public int BagCount { get; }
+        public int BagSize { get; }
+        public int Capacity { get; set; }
+        public System.TimeSpan CleanupInterval { get; set; }
+        public int Current { get; }
+        public int CurrentBagIndex { get; }
+        public long Hits { get; }
+        public System.TimeSpan MaxAge { get; set; }
+        public System.TimeSpan MinAge { get; }
+        public long Misses { get; }
+        public int OldestBagIndex { get; }
+        public int SinceCreation { get; }
+        public void Reset() { }
+        public override string ToString() { }
+    }
+    public class FluidCache<T>
+        where T :  class
+    {
+        public FluidCache(int capacity, System.TimeSpan minAge, System.TimeSpan maxAge, FluidCaching.GetNow getNow, FluidCaching.IsValid? validateCache = null) { }
+        public FluidCaching.CacheStats Statistics { get; }
+        public void Add(T item) { }
+        public FluidCaching.IIndex<TKey, T> AddIndex<TKey>(string indexName, FluidCaching.GetKey<T, TKey> getKey, FluidCaching.ItemCreator<TKey, T>? item = null, System.Collections.Generic.IEqualityComparer<TKey>? keyEqualityComparer = null)
+            where TKey :  notnull { }
+        public void Clear() { }
+        public System.Threading.Tasks.Task<T?> Get<TKey>(string indexName, TKey key, FluidCaching.ItemCreator<TKey, T>? createItem = null) { }
+        public FluidCaching.IIndex<TKey, T>? GetIndex<TKey>(string indexName) { }
+    }
+    public delegate TKey GetKey<T, TKey>(T item);
+    public delegate System.DateTime GetNow();
+    public interface IIndex<TKey, T>
+        where T :  class
+    {
+        System.Threading.Tasks.Task<T?> GetItem(TKey key, FluidCaching.ItemCreator<TKey, T>? createItem = null);
+        void Remove(TKey key);
+    }
+    public delegate bool IsValid();
+    public delegate System.Threading.Tasks.Task<T> ItemCreator<in TKey, T>(TKey key);
+}
