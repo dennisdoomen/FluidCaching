@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fallout.Common" Version="10.4.0" />
-    <PackageReference Include="Fallout.Components" Version="10.4.0" />
+    <PackageReference Include="Fallout.Common" Version="10.5.0" />
+    <PackageReference Include="Fallout.Components" Version="10.5.0" />
     <PackageDownload Include="ReportGenerator" Version="[5.5.1]" />
     <PackageDownload Include="GitVersion.Tool" Version="[6.5.0]" />
     <PackageDownload Include="PackageGuard" Version="[2.1.1]" />
