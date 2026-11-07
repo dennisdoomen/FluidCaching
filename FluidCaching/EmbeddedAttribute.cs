@@ -4,7 +4,7 @@
 #endif
 
 // This attribute must live in the namespace Roslyn expects, and must be partial, see the remarks below.
-// ReSharper disable CheckNamespace, PartialTypeWithSinglePart, UnusedNullableDirective
+// ReSharper disable CheckNamespace, PartialTypeWithSinglePart, UnusedNullableDirective, UnusedType.Global
 #nullable disable
 
 // Licensed to the .NET Foundation under one or more agreements.

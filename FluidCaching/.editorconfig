@@ -17,3 +17,11 @@ dotnet_diagnostic.IDE0305.severity = none
 # Reason: The content-only FluidCaching package ships these files as source code. Consumers may not enable nullable
 # reference types for their project, so every file needs its own directive.
 resharper_redundant_nullable_directive_highlighting = none
+
+# Purpose: Auto-property can be made get-only
+# Reason: The setters of CacheStats are part of the existing public API
+resharper_auto_property_can_be_made_get_only_global_highlighting = none
+
+# Purpose: Type parameter could be declared as covariant or contravariant
+# Reason: We keep the generic parameters of the existing public API unchanged
+resharper_type_parameter_can_be_variant_highlighting = none

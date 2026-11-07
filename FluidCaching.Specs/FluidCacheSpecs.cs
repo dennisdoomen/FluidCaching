@@ -8,7 +8,7 @@ using Xunit;
 
 namespace FluidCaching.Specs;
 
-public class FluidCacheSpecs
+public static class FluidCacheSpecs
 {
     public class Capacity
     {
