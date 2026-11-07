@@ -1,4 +1,8 @@
-<h1 align="center">Fluid Caching</h1>
+<h1 align="center">
+  <br>
+  Fluid Caching
+  <br>
+</h1>
 
 <h4 align="center">A least recently used cache that you can use without worrying</h4>
 
@@ -12,9 +16,22 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/dennisdoomen/FluidCaching?style=flat)
 [![GitHub contributors](https://img.shields.io/github/contributors/dennisdoomen/FluidCaching)](https://github.com/dennisdoomen/FluidCaching/graphs/contributors)
 [![GitHub last commit](https://img.shields.io/github/last-commit/dennisdoomen/FluidCaching)](https://github.com/dennisdoomen/FluidCaching)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/dennisdoomen/FluidCaching)](https://github.com/dennisdoomen/FluidCaching/graphs/commit-activity)
 [![open issues](https://img.shields.io/github/issues/dennisdoomen/FluidCaching)](https://github.com/dennisdoomen/FluidCaching/issues)
-![Static Badge](https://img.shields.io/badge/4.7%2C_10.0-dummy?label=dotnet&color=%235027d5)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+![](https://img.shields.io/badge/release%20strategy-githubflow-orange.svg)
+![Static Badge](https://img.shields.io/badge/4.7%2C_10.0-dummy?label=dotnet&color=%235027d5)
+
+<a href="#about">About</a> •
+<a href="#how-do-i-use-it">How To Use</a> •
+<a href="#how-does-it-work">How It Works</a> •
+<a href="#download">Download</a> •
+<a href="#building">Building</a> •
+<a href="#contributors">Contributors</a> •
+<a href="#versioning">Versioning</a> •
+<a href="#credits">Credits</a> •
+<a href="#you-may-also-like">Related</a> •
+<a href="#license">License</a>
 
 </div>
 
@@ -22,51 +39,111 @@
 
 ### What's this?
 
-A while ago, I [ran a test](https://www.continuousimprover.com/2016/01/evaluating-ravendb-as-embedded-database.html) to use RavenDB as a projection store for an event sourced system. One of the things I tried to speed up RavenDB's projection speed was to use the [Least Recently Used cache](http://www.codeproject.com/Articles/23396/A-High-Performance-Multi-Threaded-LRU-Cache) developed by [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272) a couple of years ago. This cache gave us a nice speed increase, but the original author appears to be unreachable and seemingly abandoned the project. So I started looking for a way to distribute the code in a way that makes it painless to consume it in other projects. With this in mind, I decided to initiate a new open-source project Fluid Caching.
+Fluid Caching is a multi-threaded, high-performance Least Recently Used (LRU) cache with async/await support. It
+supports:
 
-The cache in itself did meet our requirements quite well. It supported putting a limit on its capacity. It allows you to specify the minimum amount of time objects must be kept in the cache (even if that would exceed the capacity), as well as a maximum amount of time. It's completely safe to use in multi-threaded scenarios and is using an algorithm that keeps the performance under control, regardless of the number of items in the cache. It also supports multiple indexes based on different keys on top of the same cache, and is pretty flexible in how you get keys from objects. All credits for the initial implementation go to Brian, and I welcome you to read his original article from 2009 on some of the design choices.
+* A limit on the capacity of the cache.
+* A minimum amount of time that an item stays in the cache, even if that exceeds the capacity for a short time.
+* A maximum amount of time that an unused item stays in the cache.
+* Safe use from multiple threads, with a factory that creates a missing item only once.
+* Multiple indexes on top of the same cache, each with its own key and an optional key comparer.
+* Statistics such as hits, misses and the current number of items, to help you tune the cache.
 
-The library supports:
-* **.NET Framework 4.7** and higher
-* **.NET 10.0** and higher
+### What's so special about that?
 
-### Another caching library!? Why?
+It's a content-only NuGet package. The package adds the C# source code to your project, and all types are `internal`.
+So you can use it in your own libraries and NuGet packages, without forcing your users to take a dependency on
+another package. The code compiles with C# 10 or later, and is tested on .NET Framework 4.7 and .NET 10.
 
-Good question. Some of the custom thread synchronization primitives are part of the .NET framework these days. Next to that, we all write asynchronous code and thus have a need for support for async/await. Being able to compile the code against any modern .NET version isn't a luxury either. Other features include thread-safe factory methods and some telemetry for tuning the cache to your needs. In terms of code distribution, my preferred method for a library like this is a source-only NuGet package, so that you don't have to bother the consumers of your packages with another dependency. Also, the code quality itself needs some [Object Calisthenics](https://www.continuousimprover.com/2015/10/9-simple-practices-for-writing-better.html) love as well as some sprinkles of my [Coding Guidelines](https://csharpcodingguidelines.com). And finally, you can't ship a library without at least a decent amount of properly scoped unit tests and a fully automated build pipeline.
+### Where does it come from?
+
+A while ago, I [ran a test](https://www.continuousimprover.com/2016/01/evaluating-ravendb-as-embedded-database.html)
+to use RavenDB as a projection store for an event sourced system. To speed up the projections, I used the
+[Least Recently Used cache](http://www.codeproject.com/Articles/23396/A-High-Performance-Multi-Threaded-LRU-Cache)
+written by [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272) in 2009. It gave us a
+nice speed increase, but the original author seems to have abandoned the project. So I started Fluid Caching to make
+the code easy to use in other projects, and to add async/await support, thread-safe factory methods, statistics,
+unit tests and a fully automated build pipeline. All credits for the initial implementation go to Brian.
+
+### Who created this?
+My name is Dennis Doomen and I'm a Microsoft MVP and Principal Consultant at [Aviva Solutions](https://avivasolutions.nl/) with 28 years of experience under my belt. As a software architect and/or lead developer, I specialize in designing full-stack enterprise solutions based on .NET as well as providing coaching on all aspects of designing, building, deploying and maintaining software systems. I'm the author of [Fluent Assertions](https://www.fluentassertions.com), a popular .NET assertion library, [Liquid Projections](https://www.liquidprojections.net), a set of libraries for building Event Sourcing projections and I've been maintaining [coding guidelines for C#](https://www.csharpcodingguidelines.com) since 2001.
+
+Contact me through [Email](mailto:dennis.doomen@avivasolutions.nl), [BlueSky](https://bsky.app/profile/ddoomen.bsky.social), [Twitter/X](https://twitter.com/ddoomen) or [Mastadon](https://mastodon.social/@ddoomen)
 
 ## How do I use it?
 
-Considering a `User` class, in its simplest form, you can use the cache like this:
+Add the `FluidCaching` NuGet package to a project that uses C# 10 or later. Projects that target .NET Framework use
+C# 7.3 by default, so add `<LangVersion>10</LangVersion>` (or higher) to your `.csproj` file.
+
+Considering a `User` class, create the cache like this:
 
 ```csharp
-var cache = new FluidCache<User>(1000, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10), () => DateTime.Now);
+using FluidCaching;
+
+var cache = new FluidCache<User>(1000, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(10), () => DateTime.UtcNow);
 ```
 
-This will create a cache with a maximum capacity of a 1000 items, but considering the minimum age of 1 minute, the actual capacity may exceed that for a short time. After an object hasn't been requested for as long as 10 minutes, it will be eligible for garbage collection. To retrieve objects from the cache, you need to create an index:
+This creates a cache with a capacity of 1000 items. Because of the minimum age of 1 minute, the actual number of items
+can be higher for a short time. After an item hasn't been requested for 10 minutes, it can be removed from the cache.
+The last argument tells the cache how to get the current time, which makes it easy to use in unit tests.
+
+To get items from the cache, you need an index:
 
 ```csharp
 IIndex<string, User> indexById = cache.AddIndex("byId", user => user.Id);
 ```
 
-The lambda you pass in will be used to extract the key from the `User` object. Notice that you can have multiple indexes at the same time without causing duplication of the `User` instances. To retrieve an object from the cache (or create it on the spot), use the cache like this:
+The lambda gets the key from a `User` object. You can add more than one index without duplicating the `User`
+instances. To get an item from the cache, or create it if it's not there yet, use:
 
 ```csharp
 User? user = await indexById.GetItem("dennisd", id => Task.FromResult(new User { Id = id }));
 ```
 
-## Where do I get it?
+The cache calls the factory only once, even if many threads ask for the same key at the same time. Instead of passing
+the factory to every `GetItem` call, you can also pass it to `AddIndex`:
 
-It's available in two different forms.
-* A NuGet package called [FluidCaching](https://www.nuget.org/packages/FluidCaching/) that adds a binary dependency for .NET Framework 4.7 or .NET 10.0 and later.
-* A NuGet package called [FluidCaching.Sources](https://www.nuget.org/packages/FluidCaching.Sources/) that just adds the source code to your project without any binary dependencies. All types are `internal`, so they don't become part of your public API. Your project must use C# 10 or later.
+```csharp
+IIndex<string, User> indexById = cache.AddIndex("byId", user => user.Id, id => LoadUserAsync(id));
 
-## So how does it work?
+User? user = await indexById.GetItem("dennisd");
+```
 
-As I mentioned before, I highly recommend the original article if you want to understand some of the design decisions, but let me share some of the inner workings right now. The `FluidCache` class is the centerpiece of the solution. It's more of a factory for other objects than a cache per se. Instead, all items in the cache are owned by the `LifespanManager`. Its responsibility is to track when an item has been 'touched' and use that to calculate when it is eligible for garbage collection while accounting for the provided minimum age.
+Some other things you can do:
 
-Each item in the cache is represented by a `Node`, which on itself is part of a linked list of such nodes. The `LifespanManager` maintains an internal collection of 265 bags of which only one is open at the same time. Each bag has a limited lifetime and contains a pointer to the first node in the linked list. Whenever a new item is added to the cache, it is inserted into the head of the linked list. Similarly, if an existing item is requested, it is moved to the current bag as well. But whenever an item is added, requested or removed and a certain internal interval is passed, a (synchronous) clean-up operation is executed. This clean-up will iterate over all the bags, starting with the oldest one, and try to remove all nodes from that bag, provided that the bag's end-date matches the configured minimum and maximum age. When the clean-up has completed, the current bag is closed (its end date and time is set) and the next one is marked as 'open'.
+* `cache.Add(user)` adds an item directly, without using an index.
+* `indexById.Remove("dennisd")` removes an item from the cache.
+* `cache.Clear()` removes all items from the cache.
+* `cache.AddIndex("byName", user => user.Name, keyEqualityComparer: StringComparer.OrdinalIgnoreCase)` creates an index
+  that ignores the casing of the key.
+* `cache.Get("byId", "dennisd")` gets an item through the name of an index.
+* `cache.Statistics` gives you the number of hits and misses, the current number of items and more.
+* The optional `validateCache` argument of the `FluidCache` constructor lets you clear the whole cache when an external
+  condition changes.
 
-Through the `FluidCache` class, you can create multiple indexes and provide an optional factory method. However, indexes are nothing more than simple dictionaries that connect the key of the index with a weak reference to the right node. They will never prevent the garbage collector from cleaning your item. Only after the `LifespanManager` removes the reference from its internal collection of aging bags, the GC can do its job. Obviously, that factory will be invoked only once, and only if the object isn't in the cache already. Instead of passing the factory method in the call to `GetItem`, you can also pass a more global factory into the `AddIndex` method.
+## How does it work?
+
+The `FluidCache` class is the center of the solution. It's more of a factory for other objects than a cache itself.
+All items in the cache are owned by the `LifespanManager`. It tracks when an item was last 'touched', and uses that to
+decide when the item can be removed, while respecting the configured minimum age.
+
+Each item in the cache is wrapped in a `Node`, which is part of a linked list of nodes. The `LifespanManager` keeps an
+internal collection of 265 bags. Only one bag is open at a time. Each bag has a limited lifetime and points to the
+first node of its linked list. A new item is added to the head of the list of the open bag. When an existing item is
+requested, it moves to the open bag as well. When an item is added, requested or removed and a certain interval has
+passed, the cache runs a (synchronous) clean-up. This clean-up goes through all bags, starting with the oldest one, and
+removes the nodes from bags that are older than the configured minimum and maximum age. Then it closes the current bag
+and opens the next one.
+
+The indexes are simple dictionaries that connect a key to a weak reference to the right node. So they never stop the
+garbage collector from cleaning up your item. Only after the `LifespanManager` removes an item from its bags, can the
+garbage collector do its job.
+
+## Download
+
+This library is available as [a NuGet package](https://www.nuget.org/packages/FluidCaching) on https://nuget.org. To install it, use the following command-line:
+
+  `dotnet add package FluidCaching`
 
 ## Building
 
@@ -86,13 +163,12 @@ Or on Linux and macOS:
 ./build.sh
 ```
 
-The build compiles the code, runs the tests, checks the public API, scans the NuGet dependencies with [PackageGuard](https://github.com/dennisdoomen/packageguard), runs the JetBrains InspectCode analysis and creates the NuGet packages.
+The build compiles the code, runs the tests, checks the public API, scans the NuGet dependencies with
+[PackageGuard](https://github.com/dennisdoomen/packageguard), runs JetBrains InspectCode and creates the NuGet package.
 
-## Contributing
+## Contributors
 
 Your contributions are always welcome! Please have a look at the [contribution guidelines](CONTRIBUTING.md) first.
-
-Previous contributors include:
 
 <a href="https://github.com/dennisdoomen/FluidCaching/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=dennisdoomen/FluidCaching" alt="contrib.rocks image" />
@@ -101,25 +177,39 @@ Previous contributors include:
 (Made with [contrib.rocks](https://contrib.rocks))
 
 ## Versioning
-
 This library uses [Semantic Versioning](https://semver.org/) to give meaning to the version numbers. For the versions available, see the [releases](https://github.com/dennisdoomen/FluidCaching/releases) on this repository.
 
 ## Credits
+This library wouldn't have been possible without the following tools, packages and companies:
 
-All credits for the initial implementation go to [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272). This library also wouldn't have been possible without the following tools, packages and companies:
-
-* [FluentAssertions](https://fluentassertions.com/) - Fluent API for asserting the results of unit tests by [Dennis Doomen](https://github.com/dennisdoomen)
+* [Brian Agnes](http://www.codeproject.com/script/Membership/View.aspx?mid=3034272) - The author of the original [high performance multi-threaded LRU cache](http://www.codeproject.com/Articles/23396/A-High-Performance-Multi-Threaded-LRU-Cache)
 * [Nuke](https://nuke.build/) - Smart automation for DevOps teams and CI/CD pipelines
-* [xUnit](https://xunit.net/) - Community-focused unit testing tool for .NET by [Brad Wilson](https://github.com/bradwilson)
-* [Coverlet](https://github.com/coverlet-coverage/coverlet) - Cross platform code coverage for .NET by [Toni Solarin-Sodara](https://github.com/tonerdo)
+* [Rider](https://www.jetbrains.com/rider/) - The world's most loved .NET and game dev IDE
+* [xUnit](https://xunit.net/) - Community-focused unit testing tool for .NET.
+* [FluentAssertions](https://fluentassertions.com/) - Extension methods to fluently assert the outcome of .NET tests
+* [Coverlet](https://github.com/coverlet-coverage/coverlet) - Cross platform code coverage for .NET
 * [GitVersion](https://gitversion.net/) - From git log to SemVer in no time
-* [ReportGenerator](https://reportgenerator.io/) - Converts coverage reports by [Daniel Palme](https://github.com/danielpalme)
-* [PackageGuard](https://github.com/dennisdoomen/packageguard) - Scans NuGet dependencies for license and security issues by [Dennis Doomen](https://github.com/dennisdoomen)
+* [ReportGenerator](https://reportgenerator.io/) - Powerful code coverage visualization
+* [PackageGuard](https://github.com/dennisdoomen/packageguard) - Scans NuGet dependencies for license and security issues
 * [StyleCopAnalyzers](https://github.com/DotNetAnalyzers/StyleCopAnalyzers) - StyleCop rules for .NET
-* [Roslynator](https://github.com/dotnet/roslynator) - A set of code analysis tools for C# by [Josef Pihrt](https://github.com/josefpihrt)
-* [CSharpCodingGuidelines](https://github.com/bkoelman/CSharpGuidelinesAnalyzer) - Roslyn analyzers by [Bart Koelman](https://github.com/bkoelman) to go with the [C# Coding Guidelines](https://csharpcodingguidelines.com/)
-* [Meziantou](https://github.com/meziantou/Meziantou.Framework) - Another set of awesome Roslyn analyzers by [Gérald Barré](https://github.com/meziantou)
+* [Roslynator](https://github.com/dotnet/roslynator) - A set of code analysis tools for C#
+* [CSharpGuidelinesAnalyzer](https://github.com/bkoelman/CSharpGuidelinesAnalyzer) - Roslyn analyzers to go with the [C# Coding Guidelines](https://csharpcodingguidelines.com/)
+* [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) - Another set of Roslyn analyzers
+
+## Support the project
+* [Github Sponsors](https://github.com/sponsors/dennisdoomen)
+* [Tip Me](https://paypal.me/fluentassertions)
+* [Buy me a Coffee](https://ko-fi.com/dennisdoomen)
+* [Sponsor Me](https://www.patreon.com/bePatron?u=9250052&redirect_uri=http%3A%2F%2Ffluentassertions.com%2F&utm_medium=widget)
+
+## You may also like
+
+* [My Blog](https://www.dennisdoomen.com)
+* [Reflectify](https://github.com/dennisdoomen/reflectify?tab=readme-ov-file#readme) - Reflection extensions without causing dependency pains
+* [Mockly](https://github.com/dennisdoomen/mockly?tab=readme-ov-file#readme) - Fluent HTTP mocking for .NET like it should have been done
+* [Pathy](https://github.com/dennisdoomen/pathy?tab=readme-ov-file#readme) - Fluently building and using file and directory paths without binary dependencies
+* [FluentAssertions](https://github.com/fluentassertions/fluentassertions) - Extension methods to fluently assert the outcome of .NET tests
+* [C# Coding Guidelines](https://csharpcodingguidelines.com/) - Forkable coding guidelines for all C# versions
 
 ## License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -1,5 +1,4 @@
-﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/dennisdoomen/FluidCaching")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FluidCaching.Specs")]
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("FluidCaching.Specs")]
 namespace FluidCaching
 {
     public class CacheStats

@@ -203,8 +203,8 @@ class Build : FalloutBuild
             string[] headersToInclude =
             [
                 "About",
-                "How do I use it",
-                "Where do I get it",
+                "How do I use it?",
+                "How does it work?",
                 "Versioning",
                 "Credits"
             ];
@@ -227,7 +227,7 @@ class Build : FalloutBuild
                 .WhenNotNull(SemVer, (c, semVer) => c
                     .AddPair("Packed version", semVer)));
 
-            // Pack the binary FluidCaching library
+            // Pack the content-only FluidCaching package, as defined by FluidCaching/.nuspec
             DotNetPack(s => s
                 .SetProject(Solution.GetProject("FluidCaching"))
                 .SetOutputDirectory(ArtifactsDirectory)
@@ -236,17 +236,6 @@ class Build : FalloutBuild
                 .EnableNoLogo()
                 .EnableNoRestore()
                 .EnableContinuousIntegrationBuild() // Necessary for deterministic builds
-                .SetVersion(SemVer));
-
-            // Pack the source-only package
-            DotNetPack(s => s
-                .SetProject(Solution.GetProject("FluidCaching.Sources"))
-                .SetOutputDirectory(ArtifactsDirectory)
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoLogo()
-                .EnableNoRestore()
-                .EnableContinuousIntegrationBuild()
                 .SetVersion(SemVer));
         });
 

@@ -1,46 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    This project only exists to compile, test and analyze the code. The NuGet package is content-only: it ships the
+    C# files in this folder (see .nuspec), so that consumers compile them into their own assembly. Without the
+    FLUIDCACHING_COMPILE symbol, all types are internal and marked as embedded.
+  -->
   <PropertyGroup>
     <TargetFrameworks>net10.0;net47</TargetFrameworks>
+    <!-- The C# files are shipped as source code, so we make sure they compile with C# 10 -->
+    <LangVersion>10</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <AssemblyName>FluidCaching</AssemblyName>
     <RootNamespace>FluidCaching</RootNamespace>
-    <!-- Makes the types public in the binary package. The source-only package keeps them internal. -->
-    <DefineConstants>$(DefineConstants);PUBLIC_FLUID_CACHING</DefineConstants>
+    <DefineConstants>$(DefineConstants);FLUIDCACHING_COMPILE</DefineConstants>
+    <NuSpecFile>.nuspec</NuSpecFile>
+    <NuspecProperties>version=$(Version);year=$([System.DateTime]::Now.ToString(yyyy))</NuspecProperties>
   </PropertyGroup>
-
-  <PropertyGroup Label="Package info">
-    <PackageId>FluidCaching</PackageId>
-    <Authors>Dennis Doomen</Authors>
-    <PackageDescription>
-      A multi-threaded high performance Least Recently Used cache with async/await support.
-    </PackageDescription>
-    <PackageProjectUrl>https://github.com/dennisdoomen/FluidCaching</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dennisdoomen/FluidCaching</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>LRU;Caching;cache</PackageTags>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReadmeFile>Readme.md</PackageReadmeFile>
-    <PackageReleaseNotes>https://github.com/dennisdoomen/FluidCaching/releases</PackageReleaseNotes>
-    <Copyright>Copyright 2015-$([System.DateTime]::Now.ToString(yyyy)) Dennis Doomen</Copyright>
-  </PropertyGroup>
-
-  <ItemGroup Label="Package files">
-    <None Include="..\LICENSE" Pack="true" PackagePath="" />
-    <None Include="..\Artifacts\Readme.md" Pack="true" PackagePath="" Condition="Exists('..\Artifacts\Readme.md')" />
-  </ItemGroup>
-
-  <ItemGroup Label="Dependencies">
-    <PackageReference Include="PolySharp" Version="1.16.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 
   <ItemGroup Label="Internals visible to">
     <InternalsVisibleTo Include="FluidCaching.Specs" />

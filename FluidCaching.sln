@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching", "FluidCaching\FluidCaching.csproj", "{BEAF483F-3D02-4F0C-92A0-3FAC00DF3369}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching.Sources", "FluidCaching.Sources\FluidCaching.Sources.csproj", "{D8473849-F602-4CFD-88CA-5466DFBF5430}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching.Specs", "FluidCaching.Specs\FluidCaching.Specs.csproj", "{AD5A173A-AC1A-4FE4-878D-CC3218DDA90C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidCaching.ApiVerificationTests", "FluidCaching.ApiVerificationTests\FluidCaching.ApiVerificationTests.csproj", "{DA9CCAF5-A8A0-45A5-A9F9-4E4CB826A089}"
@@ -34,10 +32,6 @@ Global
 		{BEAF483F-3D02-4F0C-92A0-3FAC00DF3369}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEAF483F-3D02-4F0C-92A0-3FAC00DF3369}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEAF483F-3D02-4F0C-92A0-3FAC00DF3369}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D8473849-F602-4CFD-88CA-5466DFBF5430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8473849-F602-4CFD-88CA-5466DFBF5430}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D8473849-F602-4CFD-88CA-5466DFBF5430}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D8473849-F602-4CFD-88CA-5466DFBF5430}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD5A173A-AC1A-4FE4-878D-CC3218DDA90C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD5A173A-AC1A-4FE4-878D-CC3218DDA90C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD5A173A-AC1A-4FE4-878D-CC3218DDA90C}.Release|Any CPU.ActiveCfg = Release|Any CPU

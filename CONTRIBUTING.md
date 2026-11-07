@@ -14,8 +14,8 @@ posting "me too", upvote the issue with 👍.
 * Target the `master` branch with your [pull request](https://help.github.com/articles/using-pull-requests).
 * The code complies with the [C# Coding Guidelines](https://csharpcodingguidelines.com/). The analyzers in this
   repository check most of these rules during the build.
-* The files in `FluidCaching/` are also shipped as source code in the `FluidCaching.Sources` package. Keep them
-  compatible with C# 10.
+* The `FluidCaching` NuGet package is content-only: it ships the files in `FluidCaching/` as source code. Keep them
+  compatible with C# 10, and follow the `FLUIDCACHING_COMPILE` pattern described in [AGENTS.md](AGENTS.md).
 * The changes are covered by new or existing unit tests that follow the Arrange-Act-Assert syntax, like the ones in
   [FluidCacheSpecs.cs](FluidCaching.Specs/FluidCacheSpecs.cs).
 * If you change the public API on purpose, update the approved API files. Run the tests in
