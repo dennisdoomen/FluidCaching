@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/dennisdoomen/FluidCaching#readme
+    about: Read the documentation.
+  - name: ⭐ Sponsor FluidCaching
+    url: https://github.com/sponsors/dennisdoomen
+    about: Help the continued development.

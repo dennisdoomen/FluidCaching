@@ -1,0 +1,29 @@
+changelog:
+  exclude:
+    labels:
+      - changelog-ignore
+      - skip-release-notes
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: Breaking Changes
+      labels:
+        - "breaking change"
+    - title: New features
+      labels:
+        - "feature"
+    - title: Improvements
+      labels:
+        - "enhancement"
+    - title: Fixes
+      labels:
+        - "bug"
+    - title: Fixes (extensibility)
+      labels:
+        - "extensibility"
+    - title: Documentation
+      labels:
+        - "documentation"
+    - title: Others
+      labels:
+        - "*"

@@ -1,0 +1,20 @@
+{
+    "Settings": {
+        "Allow": {
+            "Licenses": [
+                "MIT",
+                "Apache-2.0",
+                "BSD-3-Clause",
+                "BSD-2-Clause",
+                "Microsoft .NET Library License"
+            ],
+            "Packages": [
+                "FluentAssertions",
+                "NETStandard.Library",
+                "Microsoft.NETFramework.ReferenceAssemblies",
+                "Microsoft.NETFramework.ReferenceAssemblies.net47",
+                "Microsoft.NETFramework.ReferenceAssemblies.net472"
+            ]
+        }
+    }
+}

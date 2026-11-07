@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;net47</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <AssemblyName>FluidCaching</AssemblyName>
+    <RootNamespace>FluidCaching</RootNamespace>
+    <!-- Makes the types public in the binary package. The source-only package keeps them internal. -->
+    <DefineConstants>$(DefineConstants);PUBLIC_FLUID_CACHING</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package info">
+    <PackageId>FluidCaching</PackageId>
+    <Authors>Dennis Doomen</Authors>
+    <PackageDescription>
+      A multi-threaded high performance Least Recently Used cache with async/await support.
+    </PackageDescription>
+    <PackageProjectUrl>https://github.com/dennisdoomen/FluidCaching</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dennisdoomen/FluidCaching</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>LRU;Caching;cache</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/dennisdoomen/FluidCaching/releases</PackageReleaseNotes>
+    <Copyright>Copyright 2015-$([System.DateTime]::Now.ToString(yyyy)) Dennis Doomen</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup Label="Package files">
+    <None Include="..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\Artifacts\Readme.md" Pack="true" PackagePath="" Condition="Exists('..\Artifacts\Readme.md')" />
+  </ItemGroup>
+
+  <ItemGroup Label="Dependencies">
+    <PackageReference Include="PolySharp" Version="1.16.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Label="Internals visible to">
+    <InternalsVisibleTo Include="FluidCaching.Specs" />
+  </ItemGroup>
+
+</Project>

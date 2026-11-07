@@ -1,8 +1,23 @@
-Contributing to Fluid Caching
------------
+# Contributing to Fluid Caching
 
-No open-source projection is going to be successful without contributions. After we decided to move to Github, the involvement of the .NET community has increased significantly. However, contributing to this project involves a few steps that will seriously increase the change we will accept it.
+No open-source project is going to be successful without contributions. We are grateful for all contributions,
+no matter their size. To make it easier for us to accept your change, please follow these steps.
 
-* The [Pull Request](https://help.github.com/articles/using-pull-requests) is targeted at the `develop` branch.
-* The code complies with the [Coding Guidelines for C# 3.0, 4.0 and 5.0](http://csharpguidelines.codeplex.com/)/. 
-* The changes are covered by a new or existing set of unit tests which follow the Arrange-Act-Assert syntax such as is used [in this example](https://github.com/dennisdoomen/FluidCaching/blob/master/Tests/FluidCaching.Specs/FluidCacheSpecs.cs#L20)
+## Finding existing issues
+
+Before you file a new issue, please search the [issues](https://github.com/dennisdoomen/FluidCaching/issues) to
+check if it already exists. If you find an existing issue, please add your feedback to the discussion. Instead of
+posting "me too", upvote the issue with 👍.
+
+## Pull requests
+
+* Target the `master` branch with your [pull request](https://help.github.com/articles/using-pull-requests).
+* The code complies with the [C# Coding Guidelines](https://csharpcodingguidelines.com/). The analyzers in this
+  repository check most of these rules during the build.
+* The files in `FluidCaching/` are also shipped as source code in the `FluidCaching.Sources` package. Keep them
+  compatible with C# 10.
+* The changes are covered by new or existing unit tests that follow the Arrange-Act-Assert syntax, like the ones in
+  [FluidCacheSpecs.cs](FluidCaching.Specs/FluidCacheSpecs.cs).
+* If you change the public API on purpose, update the approved API files. Run the tests in
+  `FluidCaching.ApiVerificationTests` and then `AcceptApiChanges.ps1` or `AcceptApiChanges.sh`.
+* Run `./build.ps1` (Windows) or `./build.sh` (Linux and macOS) before you submit your pull request.

@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    This project produces the source-only NuGet package. It does not compile anything itself.
+    It ships the C# files of the FluidCaching project as content files, so that consumers compile
+    them into their own assembly. Without the PUBLIC_FLUID_CACHING symbol, all types stay internal.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <RunAnalyzers>false</RunAnalyzers>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package info">
+    <PackageId>FluidCaching.Sources</PackageId>
+    <Title>FluidCaching (Source-Only)</Title>
+    <Authors>Dennis Doomen</Authors>
+    <PackageDescription>
+      A multi-threaded high performance Least Recently Used cache with async/await support, shipped as a source-only NuGet package.
+      Requires C# 10 or later.
+    </PackageDescription>
+    <PackageProjectUrl>https://github.com/dennisdoomen/FluidCaching</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dennisdoomen/FluidCaching</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>LRU;Caching;cache;source</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/dennisdoomen/FluidCaching/releases</PackageReleaseNotes>
+    <Copyright>Copyright 2015-$([System.DateTime]::Now.ToString(yyyy)) Dennis Doomen</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup Label="Package files">
+    <None Include="..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\Artifacts\Readme.md" Pack="true" PackagePath="" Condition="Exists('..\Artifacts\Readme.md')" />
+    <Content Include="..\FluidCaching\**\*.cs" Exclude="..\FluidCaching\obj\**;..\FluidCaching\bin\**"
+             Pack="true" PackagePath="contentFiles/cs/any/FluidCaching" BuildAction="Compile" Visible="false" />
+  </ItemGroup>
+
+</Project>

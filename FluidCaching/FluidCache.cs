@@ -1,0 +1,199 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace FluidCaching;
+
+/// <summary>
+/// FluidCache is a thread safe cache that automatically removes the items that have not been accessed for a long time.
+/// An object will never be removed if it has been accessed within the minAge timeSpan, else it will be removed if it
+/// is older than maxAge or the cache is beyond its desired size capacity. A periodic check is made when accessing nodes
+/// that determines if the cache is out of date, and clears the cache (allowing new objects to be loaded upon next request).
+/// </summary>
+/// <remarks>
+/// <para>
+/// Each Index provides dictionary key / value access to any object in cache, and has the ability to load any object that is
+/// not found. The Indexes use Weak References allowing objects in index to be garbage collected if no other objects are using
+/// them. The objects are not directly stored in indexes, rather, indexes hold Nodes which are linked list nodes. The
+/// LifespanManager maintains a list of Nodes in each AgeBag which hold the objects and prevents them from being garbage
+/// collected. Any time an object is retrieved through a Index it is marked to belong to the current AgeBag. When the cache
+/// gets too full/old the oldest age bag is emptied moving any nodes that have been touched to the correct AgeBag and removing
+/// the rest of the nodes in the bag. Once a node is removed from the LifespanManager it becomes eligible for garbage
+/// collection. The Node is not removed from the Indexes immediately. If a Index retrieves the node prior to garbage
+/// collection it is reinserted into the current AgeBag's Node list. If it has already been garbage collected a new object
+/// gets loaded. If the Index size exceeds twice the capacity the index is cleared and rebuilt.
+/// </para>
+/// <para>
+/// THERE ARE 2 DIFFERENT LOCKS USED BY CACHE - so care is required when altering code or you may introduce deadlocks.
+/// The order of lock nesting is LifespanManager / Index.
+/// </para>
+/// </remarks>
+#if PUBLIC_FLUID_CACHING
+public
+#else
+internal
+#endif
+    class FluidCache<T>
+    where T : class
+{
+    private readonly Dictionary<string, IIndexManagement<T>> indexList = new(StringComparer.Ordinal);
+    private readonly LifespanManager<T> lifeSpan;
+
+    private readonly object syncObject = new();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluidCache{T}"/> class.
+    /// </summary>
+    /// <param name="capacity">The normal item limit for cache (Count may exceed capacity due to minAge).</param>
+    /// <param name="minAge">The minimum time after an access before an item becomes eligible for removal. During this time
+    /// the item is protected and will not be removed from cache even if over capacity.</param>
+    /// <param name="maxAge">The max time that an object will sit in the cache without being accessed, before being removed.</param>
+    /// <param name="getNow">A delegate to get the current time.</param>
+    /// <param name="validateCache">
+    /// An optional delegate used to determine if cache is out of date. Is called before index access not more than once
+    /// per 10 seconds.
+    /// </param>
+    public FluidCache(int capacity, TimeSpan minAge, TimeSpan maxAge, GetNow getNow, IsValid? validateCache = null)
+    {
+        lifeSpan = new LifespanManager<T>(this, capacity, minAge, maxAge, getNow)
+        {
+            ValidateCache = validateCache
+        };
+    }
+
+    /// <summary>
+    /// Gets a collection of statistics for the current cache instance.
+    /// </summary>
+    public CacheStats Statistics => lifeSpan.Stats;
+
+    internal IEnumerable<IIndexManagement<T>> Indexes => indexList.Values;
+
+    /// <summary>
+    /// Retrieves an index by name.
+    /// </summary>
+    /// <returns>
+    /// The index, or <see langword="null"/> if no index with the name <paramref name="indexName"/> and a key of type
+    /// <typeparamref name="TKey"/> exists.
+    /// </returns>
+    public IIndex<TKey, T>? GetIndex<TKey>(string indexName)
+    {
+        return indexList.TryGetValue(indexName, out IIndexManagement<T>? index) ? index as IIndex<TKey, T> : null;
+    }
+
+    /// <summary>
+    /// Gets an object associated with <paramref name="key"/> from the index identified by <paramref name="indexName"/>
+    /// or tries to create a new one using the (optional) factory method provided by <paramref name="createItem"/>.
+    /// </summary>
+    /// <returns>
+    /// Returns the object associated with the key or <see langword="null"/> if no such object exists and
+    /// the <paramref name="createItem"/> was <see langword="null"/> or returned a <see langword="null"/>.
+    /// Also returns <see langword="null"/> if no index with the name <paramref name="indexName"/> exists.
+    /// </returns>
+    public Task<T?> Get<TKey>(string indexName, TKey key, ItemCreator<TKey, T>? createItem = null)
+    {
+        IIndex<TKey, T>? index = GetIndex<TKey>(indexName);
+        return index is not null ? index.GetItem(key, createItem) : Task.FromResult<T?>(null);
+    }
+
+    /// <summary>
+    /// Adds a new index to the cache.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the key value.</typeparam>
+    /// <param name="indexName">The name to be associated with this list.</param>
+    /// <param name="getKey">Delegate to get key from object.</param>
+    /// <param name="item">Delegate to load object if it is not found in index.</param>
+    /// <param name="keyEqualityComparer">The equality comparer to be used to compare the keys. Optional.</param>
+    /// <returns>The newly created index.</returns>
+    public IIndex<TKey, T> AddIndex<TKey>(
+        string indexName,
+        GetKey<T, TKey> getKey,
+        ItemCreator<TKey, T>? item = null,
+        IEqualityComparer<TKey>? keyEqualityComparer = null)
+        where TKey : notnull
+    {
+        var index = new Index<TKey, T>(this, lifeSpan, getKey, item, keyEqualityComparer);
+        indexList[indexName] = index;
+        return index;
+    }
+
+    /// <summary>
+    /// Adds an item to the cache (not needed if accessed by index).
+    /// </summary>
+    public void Add(T item)
+    {
+        TryAddAsNode(item);
+    }
+
+    /// <summary>
+    /// Removes all items from the cache.
+    /// </summary>
+    public void Clear()
+    {
+        foreach (IIndexManagement<T> index in indexList.Values)
+        {
+            index.ClearIndex();
+        }
+
+        lifeSpan.Clear();
+    }
+
+    /// <summary>
+    /// Adds an item to the cache and returns the node that holds it.
+    /// </summary>
+    internal Node<T>? TryAddAsNode(T? item)
+    {
+        if (item is null)
+        {
+            return null;
+        }
+
+        Node<T>? node = FindExistingNode(item);
+
+        // Used to prevent the total count from growing when the item is already in the indexes (only new Nodes)
+        bool isDuplicate = node is not null && node.Value == item;
+        if (!isDuplicate)
+        {
+            var newNode = new Node<T>(lifeSpan, item);
+
+            foreach (IIndexManagement<T> index in indexList.Values)
+            {
+                if (!index.AddItem(newNode))
+                {
+                    isDuplicate = true;
+                }
+            }
+
+            lock (syncObject)
+            {
+                if (!isDuplicate)
+                {
+                    node = newNode;
+                    newNode.Touch();
+                    lifeSpan.Stats.RegisterItem();
+                }
+                else
+                {
+                    node = FindExistingNode(item);
+                }
+            }
+        }
+
+        return node;
+    }
+
+    private Node<T>? FindExistingNode(T item)
+    {
+        foreach (IIndexManagement<T> index in indexList.Values)
+        {
+            Node<T>? node = index.FindItem(item);
+            if (node is not null)
+            {
+                return node;
+            }
+        }
+
+        return null;
+    }
+}

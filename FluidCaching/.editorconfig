@@ -1,0 +1,19 @@
+[*.cs]
+
+# Purpose: Use System.Threading.Lock instead of object for locking
+# Reason: The FluidCaching.Sources package ships these files as source code. That code must compile with C# 10,
+# and System.Threading.Lock needs C# 13.
+dotnet_diagnostic.MA0158.severity = none
+
+# Purpose: Use collection expressions
+# Reason: The FluidCaching.Sources package must compile with C# 10, and collection expressions need C# 12.
+dotnet_diagnostic.IDE0028.severity = none
+dotnet_diagnostic.IDE0090.severity = none
+dotnet_diagnostic.IDE0300.severity = none
+dotnet_diagnostic.IDE0301.severity = none
+dotnet_diagnostic.IDE0305.severity = none
+
+# Purpose: Redundant '#nullable enable' directive
+# Reason: The FluidCaching.Sources package ships these files as source code. Consumers may not enable nullable
+# reference types for their project, so every file needs its own directive.
+resharper_redundant_nullable_directive_highlighting = none
