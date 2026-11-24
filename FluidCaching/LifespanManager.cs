@@ -102,7 +102,11 @@ internal sealed class LifespanManager<T> : IEnumerable<Node<T>>
 
     public int CurrentBagIndex
     {
-        get => currentBagIndex;
+        get
+        {
+            return currentBagIndex;
+        }
+
         set
         {
             currentBagIndex = value;
@@ -112,7 +116,11 @@ internal sealed class LifespanManager<T> : IEnumerable<Node<T>>
 
     private int OldestBagIndex
     {
-        get => oldestBagIndex;
+        get
+        {
+            return oldestBagIndex;
+        }
+
         set
         {
             oldestBagIndex = value;
